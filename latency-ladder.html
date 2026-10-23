@@ -1,0 +1,158 @@
+<title>Latency Ladder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: one column of zones, each a short list of bars on a shared log scale (1 ns to 1 s). */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --grid: #D5DBE3; --track: #E6EAF0; --rule: #CBD3DD;
+    --z1: #8DB8E8; --z2: #6A9FDB; --z3: #4A85CB; --z4: #2F6BB5; --z5: #1F5199; --z6: #123A78;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --grid: #26313D; --track: #18212B; --rule: #2C3846;
+      --z1: #3C6A9C; --z2: #4E80B5; --z3: #6496CB; --z4: #7DADDF; --z5: #9AC3EE; --z6: #BDDBFA;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --grid: #26313D; --track: #18212B; --rule: #2C3846;
+    --z1: #3C6A9C; --z2: #4E80B5; --z3: #6496CB; --z4: #7DADDF; --z5: #9AC3EE; --z6: #BDDBFA;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.5;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 60ch; }
+  .lede b { color: var(--fg); font-weight: 600; }
+
+  .keep { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .keep li { border-top: 3px solid var(--c); padding-top: 8px; min-width: 0; }
+  .keep .n { font-family: var(--mono); font-weight: 600; font-size: 1.25rem; display: block; }
+  .keep .w { color: var(--muted); font-size: 0.875rem; }
+  .jumps { margin: 0; color: var(--muted); font-size: 0.9375rem; max-width: 64ch; }
+  .jumps b { color: var(--fg); font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+
+  .chart { display: flex; flex-direction: column; gap: 28px; }
+  .axis { position: relative; height: 18px; font-family: var(--mono); font-size: 0.6875rem; color: var(--muted);
+    position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 2; padding-block: 2px; box-sizing: content-box; }
+  .axis span { position: absolute; top: 2px; transform: translateX(-50%); white-space: nowrap; }
+  .axis span:first-child { transform: none; }
+  .axis span:last-child { transform: translateX(-100%); }
+  @media (max-width: 560px) { .axis span.odd { display: none; } }
+
+  .zone { display: flex; flex-direction: column; gap: 12px; }
+  .zone h2 { margin: 0; font-size: 1.125rem; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .zone h2 i { width: 12px; height: 12px; background: var(--c); border-radius: 2px; display: inline-block; flex: none; align-self: center; }
+  .zone h2 small { font-size: 0.875rem; font-weight: 400; color: var(--muted); }
+  .rows { display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+  .name { flex: 1 1 14rem; min-width: 0; font-size: 0.9375rem; }
+  .real { font-family: var(--mono); font-weight: 600; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+  .human { font-family: var(--mono); font-size: 0.8125rem; color: var(--muted); min-width: 9.5em; text-align: right; font-variant-numeric: tabular-nums; }
+  .track { position: relative; height: 12px; background: var(--track);
+    background-image: repeating-linear-gradient(to right, var(--grid) 0 1px, transparent 1px 10%); border-radius: 2px; }
+  .bar { position: absolute; inset: 0 auto 0 0; background: var(--c); border-radius: 0 4px 4px 0; }
+
+  .note { border-top: 1px solid var(--rule); padding-top: 16px; color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
+  .note b { color: var(--fg); font-weight: 600; }
+  @media (max-width: 480px) { .human { text-align: left; min-width: 0; flex-basis: 100%; } }
+</style>
+
+<main class="wrap">
+  <header>
+    <h1>Latency Ladder</h1>
+    <p class="lede">Every rung is slower than the one above it. Bars sit on one log scale, so each gridline is 10&times; the last. The grey figure on each row is the same delay if <b>1 nanosecond lasted 1 second</b>.</p>
+  </header>
+
+  <section aria-label="Numbers to keep">
+    <ul class="keep" id="keep"></ul>
+  </section>
+
+  <p class="jumps">RAM is <b>200&times;</b> slower than L1. A datacenter round trip is <b>5,000&times;</b> slower than RAM. A disk seek is <b>20&times;</b> slower than that, and crossing the ocean is <b>15&times;</b> slower again.</p>
+
+  <section class="chart" id="chart" aria-label="Latency by layer, log scale"></section>
+
+  <p class="note"><b>Source list corrected:</b> it gave the California&ndash;Netherlands&ndash;California round trip as 150,000 ns, but 150 ms is 150,000,000 ns, which is what the bar uses. The SSD figure is read as 1 MB sequential, matching the disk rows.</p>
+</main>
+
+<script>
+  var ZONES = [
+    { name: "On the chip", sub: "Nanoseconds", c: "--z1", rows: [
+      ["L1 cache reference", 0.5], ["Branch mispredict", 5], ["L2 cache reference", 7], ["Mutex lock / unlock", 25] ] },
+    { name: "Main memory", sub: "RAM", c: "--z2", rows: [
+      ["Main memory reference", 100], ["Compress 1 KB with Zippy", 3000], ["Read 1 MB sequentially from memory", 250000] ] },
+    { name: "Same datacenter", sub: "Network", c: "--z3", rows: [
+      ["Send 2 KB over 1 Gbps", 20000], ["Round trip within the datacenter", 500000] ] },
+    { name: "Flash storage", sub: "SSD", c: "--z4", rows: [
+      ["Read 1 MB sequentially from SSD", 1000000] ] },
+    { name: "Spinning disk", sub: "HDD", c: "--z5", rows: [
+      ["Disk seek", 10000000], ["Read 1 MB sequentially from disk", 20000000] ] },
+    { name: "Across the ocean", sub: "Intercontinental", c: "--z6", rows: [
+      ["Packet California → Netherlands → California", 150000000] ] }
+  ];
+  var KEEP = [
+    ["100 ns", "RAM reference", "--z2"], ["0.5 ms", "datacenter round trip", "--z3"], ["1 ms", "read 1 MB from SSD", "--z4"],
+    ["10 ms", "disk seek", "--z5"], ["150 ms", "across the ocean", "--z6"]
+  ];
+  var MIN_LOG = -1, DECADES = 10;
+
+  function trim(x) { return String(Math.round(x * 10) / 10).replace(/\.0$/, ""); }
+  function real(ns) {
+    if (ns < 1e3) return trim(ns) + " ns";
+    if (ns < 1e6) return trim(ns / 1e3) + " µs";
+    if (ns < 1e9) return trim(ns / 1e6) + " ms";
+    return trim(ns / 1e9) + " s";
+  }
+  function human(ns) {
+    var s = ns;
+    if (s < 60) return "≈ " + trim(s) + " sec";
+    if (s < 3600) return "≈ " + trim(s / 60) + " min";
+    if (s < 86400) return "≈ " + trim(s / 3600) + " hours";
+    if (s < 86400 * 60) return "≈ " + trim(s / 86400) + " days";
+    if (s < 31557600) return "≈ " + trim(s / 2629800) + " months";
+    return "≈ " + trim(s / 31557600) + " years";
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  var keep = document.getElementById("keep");
+  KEEP.forEach(function (k) {
+    var li = el("li"); li.style.setProperty("--c", "var(" + k[2] + ")");
+    li.appendChild(el("span", "n", k[0])); li.appendChild(el("span", "w", k[1]));
+    keep.appendChild(li);
+  });
+
+  var chart = document.getElementById("chart");
+  var axis = el("div", "axis"); axis.setAttribute("aria-hidden", "true");
+  var ticks = ["0.1 ns", "1 ns", "10 ns", "100 ns", "1 µs", "10 µs", "100 µs", "1 ms", "10 ms", "100 ms", "1 s"];
+  ticks.forEach(function (t, i) {
+    var s = el("span", i % 2 ? "odd" : "", t); s.style.left = (i * 100 / DECADES) + "%"; axis.appendChild(s);
+  });
+  chart.appendChild(axis);
+
+  ZONES.forEach(function (z) {
+    var sec = el("div", "zone"); sec.style.setProperty("--c", "var(" + z.c + ")");
+    var h = el("h2"); h.appendChild(el("i")); h.appendChild(document.createTextNode(z.name)); h.appendChild(el("small", "", z.sub));
+    sec.appendChild(h);
+    var rows = el("div", "rows");
+    z.rows.forEach(function (r) {
+      var row = el("div", "row"), head = el("div", "head");
+      head.appendChild(el("span", "name", r[0]));
+      head.appendChild(el("span", "real", real(r[1])));
+      head.appendChild(el("span", "human", human(r[1])));
+      var track = el("div", "track"), bar = el("div", "bar");
+      bar.style.width = ((Math.log10(r[1]) - MIN_LOG) / DECADES * 100) + "%";
+      track.appendChild(bar); row.appendChild(head); row.appendChild(track); rows.appendChild(row);
+    });
+    sec.appendChild(rows); chart.appendChild(sec);
+  });
+</script>
