@@ -67,7 +67,6 @@
   .meter { position: relative; height: 10px; background: var(--track);
     background-image: repeating-linear-gradient(to right, var(--grid) 0 1px, transparent 1px 10%); border-radius: 2px; }
   .meter i { position: absolute; inset: 0 auto 0 0; background: var(--c); border-radius: 0 4px 4px 0; }
-  .scale { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: -6px; }
   .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px 32px; }
   .cols > div { min-width: 0; }
   .cols h3 { margin: 0 0 4px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
@@ -184,12 +183,11 @@
   <section class="layer" data-part="chip" style="--c: var(--z1)">
     <h2><span class="rank">1</span>On the chip <span class="fig">~1 ns</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 10%"></i></div>
-    <div class="scale">if 1 ns = 1 sec: about 1 second</div>
     <div class="cols">
       <div>
         <h3>What it is</h3>
         <p>The L1, L2 and L3 caches, built into the processor itself. L1 is tiny and private to a core, L2 is a bit larger, and L3 is shared by all cores. Each level is bigger and a few times slower than the one before.</p>
-        <p>Nothing here is persistent, and you don't address it directly. The CPU decides what to keep.</p>
+        <p>Nothing here is persistent.</p>
       </div>
       <div>
         <h3>You land here when</h3>
@@ -207,12 +205,11 @@
   <section class="layer" data-part="ram" style="--c: var(--z2)">
     <h2><span class="rank">2</span>RAM <span class="fig">~100 ns</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 30%"></i></div>
-    <div class="scale">if 1 ns = 1 sec: about 2 minutes</div>
     <div class="cols">
       <div>
         <h3>How it differs</h3>
         <p>Memory chips on the other side of a bus, not on the processor. You get gigabytes to terabytes instead of megabytes, at the cost of a trip off the chip every time the cache misses.</p>
-        <p>Still not persistent. A restart empties it.</p>
+        <p>Still not persistent.</p>
       </div>
       <div>
         <h3>You land here when</h3>
@@ -230,7 +227,6 @@
   <section class="layer" data-part="ssd" style="--c: var(--z3)">
     <h2><span class="rank">3</span>SSD (flash) <span class="fig">~100 &micro;s</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 60%"></i></div>
-    <div class="scale">if 1 ns = 1 sec: about 1 day</div>
     <div class="cols">
       <div>
         <h3>How it differs</h3>
@@ -253,7 +249,6 @@
   <section class="layer" data-part="net" style="--c: var(--z4)">
     <h2><span class="rank">4</span>Same datacenter <span class="fig">~0.5 ms</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 67%"></i></div>
-    <div class="scale">if 1 ns = 1 sec: about 6 days</div>
     <div class="cols">
       <div>
         <h3>How it differs</h3>
@@ -276,7 +271,6 @@
   <section class="layer" data-part="hdd" style="--c: var(--z5)">
     <h2><span class="rank">5</span>Spinning disk (HDD) <span class="fig">~10 ms</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 80%"></i></div>
-    <div class="scale">if 1 ns = 1 sec: about 4 months</div>
     <div class="cols">
       <div>
         <h3>How it differs</h3>
@@ -299,7 +293,6 @@
   <section class="layer" data-part="ocean" style="--c: var(--z6)">
     <h2><span class="rank">6</span>Across the ocean <span class="fig">~150 ms</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 92%"></i></div>
-    <div class="scale">if 1 ns = 1 sec: about 5 years</div>
     <div class="cols">
       <div>
         <h3>How it differs</h3>
