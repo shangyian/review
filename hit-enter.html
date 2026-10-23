@@ -24,12 +24,12 @@
   }
   body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
     padding-inline: 16px; padding-block: 32px 56px; }
-  .wrap { max-width: 1100px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  .wrap { max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
   h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
   .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
   .lede b { color: var(--fg); font-weight: 600; }
 
-  .layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 48px; align-items: start; }
+  .layout { display: grid; grid-template-columns: 500px minmax(0, 1fr); gap: 40px; align-items: start; }
   .layout aside { position: sticky; top: 16px; }
   .layout figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
   .layout figcaption { font-size: 0.75rem; color: var(--muted); }
@@ -39,19 +39,22 @@
   .key i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); display: inline-block; }
   @media (max-width: 860px) {
     .layout { grid-template-columns: minmax(0, 1fr); }
-    .layout aside { position: static; max-width: 380px; }
+    .layout aside { position: static; max-width: 520px; }
     .layout svg { max-height: none; }
   }
 
   .fl .t { fill: var(--fg); font: 11px var(--mono); }
-  .fl .tb { fill: var(--fg); font: 600 12px var(--mono); }
+  .fl .tb { fill: var(--fg); font: 600 11px var(--mono); }
   .fl .m { fill: var(--muted); font: 10px var(--mono); }
   .fl .ln { stroke: var(--muted); stroke-width: 1.5; fill: none; }
   .fl .chip { fill: var(--track); stroke: var(--rule); }
-  .fl g[data-step] { transition: opacity 0.25s; }
-  .fl.has-active g[data-step] { opacity: 0.25; }
-  .fl.has-active g[data-step].on { opacity: 1; }
-  @media (prefers-reduced-motion: reduce) { .fl g[data-step] { transition: none; } }
+  .fl rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
+  .fl [data-id] { transition: opacity 0.25s; }
+  .fl.has-active [data-id] { opacity: 0.22; }
+  .fl.has-active [data-id].on { opacity: 1; }
+  .fl g.on rect.ent { fill: var(--track); stroke-width: 3; }
+  .fl path.on { stroke: var(--fg); stroke-width: 2.5; }
+  @media (prefers-reduced-motion: reduce) { .fl [data-id] { transition: none; } }
 
   .stack { display: flex; flex-direction: column; min-width: 0; }
   .step { display: flex; flex-direction: column; gap: 14px; padding-block: 28px; min-height: 52vh; border-top: 1px solid var(--rule); }
@@ -84,96 +87,119 @@
   <div class="layout">
     <aside>
       <figure>
-        <svg class="fl" id="flow" viewBox="0 0 300 622" role="img" aria-labelledby="fl-title">
-          <title id="fl-title">Flow from pressing Enter to rendering a page: HSTS check, HTTP cache, DNS, TCP, TLS, request to a CDN edge, edge to origin, origin builds the page, response returns, the browser parses it, then renders. Two skip-ahead paths exist for cache hits.</title>
+        <svg class="fl" id="flow" viewBox="0 0 520 700" role="img" aria-labelledby="fl-title">
+          <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge, and the origin with its load balancer, app, Redis and database.</title>
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
             </marker>
           </defs>
 
-          <g data-step="1" style="--c: var(--local)">
-            <rect x="10" y="10" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="26">1  HSTS check</text>
-            <text class="m" x="20" y="40">→ use https://</text>
-            <path class="ln" d="M130 48V64" marker-end="url(#ah)"/>
+          <text class="m" x="10" y="14">ON YOUR DEVICE</text>
+          <path d="M0 398H520" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+          <text class="m" x="10" y="412">OVER THE INTERNET</text>
+
+          <path data-id="l-you-browser" class="ln" d="M74 62H104" marker-end="url(#ah)"/>
+          <path data-id="l-browser-hsts" class="ln" d="M214 50H270" marker-end="url(#ah)"/>
+          <path data-id="l-browser-cache" class="ln" d="M214 148H270" marker-end="url(#ah)"/>
+          <path data-id="l-mem-disk" class="ln" d="M380 154H396" marker-end="url(#ah)"/>
+          <path data-id="l-browser-bdns" class="ln" d="M214 248H270" marker-end="url(#ah)"/>
+          <path data-id="l-bdns-osdns" class="ln" d="M382 248H398" marker-end="url(#ah)"/>
+          <path data-id="l-osdns-resolver" class="ln" d="M454 270V430" marker-end="url(#ah)"/>
+          <path data-id="l-resolver-auth" class="ln" d="M454 474V510" marker-end="url(#ah)"/>
+          <path data-id="l-browser-edge" class="ln" d="M159 358V440" marker-end="url(#ah)"/>
+          <path data-id="l-edge-origin" class="ln" d="M159 510V590" marker-end="url(#ah)"/>
+
+          <g data-id="you" style="--c: var(--local)">
+            <rect class="ent" x="10" y="40" width="64" height="44" rx="5"/>
+            <text class="tb" x="42" y="67" text-anchor="middle">You</text>
           </g>
 
-          <g data-step="2" style="--c: var(--local)">
-            <rect x="10" y="64" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="80">2  HTTP cache</text>
-            <text class="m" x="20" y="94">→ fresh copy, or validators</text>
-            <path class="ln" d="M130 102V118" marker-end="url(#ah)"/>
-            <path class="ln" d="M250 83H280V591H252" marker-end="url(#ah)"/>
-            <text class="m" x="256" y="78">hit</text>
+          <g data-id="browser" style="--c: var(--local)">
+            <rect class="ent" x="104" y="28" width="110" height="330" rx="6"/>
+            <text class="tb" x="159" y="48" text-anchor="middle">Browser</text>
+          </g>
+          <g data-id="chips" style="--c: var(--local)">
+            <rect class="chip" x="112" y="296" width="46" height="16" rx="3"/><text class="m" x="135" y="308" text-anchor="middle">CSS</text>
+            <rect class="chip" x="162" y="296" width="46" height="16" rx="3"/><text class="m" x="185" y="308" text-anchor="middle">JS</text>
+            <rect class="chip" x="112" y="318" width="46" height="16" rx="3"/><text class="m" x="135" y="330" text-anchor="middle">img</text>
+            <rect class="chip" x="162" y="318" width="46" height="16" rx="3"/><text class="m" x="185" y="330" text-anchor="middle">other</text>
           </g>
 
-          <g data-step="3" style="--c: var(--net)">
-            <rect x="10" y="118" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="134">3  DNS</text>
-            <text class="m" x="20" y="148">→ IP of the nearest edge</text>
-            <path class="ln" d="M130 156V172" marker-end="url(#ah)"/>
+          <g data-id="hsts" style="--c: var(--local)">
+            <rect class="ent" x="270" y="28" width="240" height="44" rx="5"/>
+            <text class="tb" x="280" y="47">HSTS list</text>
+            <text class="m" x="280" y="62">remembered + built in</text>
           </g>
 
-          <g data-step="4" style="--c: var(--net)">
-            <rect x="10" y="172" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="188">4  TCP handshake</text>
-            <text class="m" x="20" y="202">→ reliable, ordered stream</text>
-            <path class="ln" d="M130 210V226" marker-end="url(#ah)"/>
+          <g data-id="cache" style="--c: var(--local)">
+            <rect class="ent" x="270" y="92" width="240" height="116" rx="5"/>
+            <text class="tb" x="280" y="110">HTTP cache</text>
+            <text class="m" x="280" y="200">answers: fresh copy | ETag | miss</text>
+          </g>
+          <g data-id="mem" style="--c: var(--local)">
+            <rect class="ent" x="282" y="122" width="98" height="64" rx="4"/>
+            <text class="tb" x="331" y="152" text-anchor="middle">memory</text>
+            <text class="m" x="331" y="168" text-anchor="middle">RAM, first</text>
+          </g>
+          <g data-id="disk" style="--c: var(--local)">
+            <rect class="ent" x="396" y="122" width="102" height="64" rx="4"/>
+            <text class="tb" x="447" y="152" text-anchor="middle">disk</text>
+            <text class="m" x="447" y="168" text-anchor="middle">SSD, second</text>
           </g>
 
-          <g data-step="5" style="--c: var(--net)">
-            <rect x="10" y="226" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="242">5  TLS handshake</text>
-            <text class="m" x="20" y="256">→ verified site, private channel</text>
-            <path class="ln" d="M130 264V280" marker-end="url(#ah)"/>
+          <g data-id="bdns" style="--c: var(--local)">
+            <rect class="ent" x="270" y="226" width="112" height="44" rx="5"/>
+            <text class="tb" x="326" y="245" text-anchor="middle">browser</text>
+            <text class="m" x="326" y="260" text-anchor="middle">DNS cache</text>
+          </g>
+          <g data-id="osdns" style="--c: var(--local)">
+            <rect class="ent" x="398" y="226" width="112" height="44" rx="5"/>
+            <text class="tb" x="454" y="245" text-anchor="middle">OS</text>
+            <text class="m" x="454" y="260" text-anchor="middle">DNS cache</text>
           </g>
 
-          <g data-step="6" style="--c: var(--net)">
-            <rect x="10" y="280" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="296">6  Request to CDN edge</text>
-            <text class="m" x="20" y="310">→ the page, if the edge has it</text>
-            <path class="ln" d="M130 318V334" marker-end="url(#ah)"/>
-            <path class="ln" d="M250 299H264V461H252" marker-end="url(#ah)"/>
-            <text class="m" x="256" y="294">hit</text>
+          <g data-id="resolver" style="--c: var(--net)">
+            <rect class="ent" x="398" y="430" width="112" height="44" rx="5"/>
+            <text class="tb" x="454" y="449" text-anchor="middle">DNS</text>
+            <text class="m" x="454" y="464" text-anchor="middle">resolver</text>
+          </g>
+          <g data-id="auth" style="--c: var(--net)">
+            <rect class="ent" x="398" y="510" width="112" height="44" rx="5"/>
+            <text class="tb" x="454" y="529" text-anchor="middle">authoritative</text>
+            <text class="m" x="454" y="544" text-anchor="middle">DNS servers</text>
           </g>
 
-          <g data-step="7" style="--c: var(--far)">
-            <rect x="10" y="334" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="350">7  Edge to origin</text>
-            <text class="m" x="20" y="364">→ the page, on an edge miss</text>
-            <path class="ln" d="M130 372V388" marker-end="url(#ah)"/>
+          <g data-id="edge" style="--c: var(--net)">
+            <rect class="ent" x="104" y="440" width="110" height="70" rx="5"/>
+            <text class="tb" x="159" y="466" text-anchor="middle">CDN edge</text>
+            <text class="m" x="159" y="484" text-anchor="middle">its own cache</text>
+            <text class="m" x="159" y="498" text-anchor="middle">near you</text>
           </g>
 
-          <g data-step="8" style="--c: var(--origin)">
-            <rect x="10" y="388" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="404">8  Origin builds the page</text>
-            <text class="m" x="20" y="418">→ HTML + cache headers</text>
-            <path class="ln" d="M130 426V442" marker-end="url(#ah)"/>
+          <g data-id="origin" style="--c: var(--origin)">
+            <rect class="ent" x="104" y="590" width="300" height="100" rx="5"/>
+            <text class="tb" x="114" y="608">Origin</text>
           </g>
-
-          <g data-step="9" style="--c: var(--net)">
-            <rect x="10" y="442" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="458">9  Response comes back</text>
-            <text class="m" x="20" y="472">→ HTML in the browser</text>
-            <path class="ln" d="M130 480V496" marker-end="url(#ah)"/>
+          <g data-id="lb" style="--c: var(--origin)">
+            <rect class="ent" x="112" y="624" width="64" height="48" rx="4"/>
+            <text class="tb" x="144" y="645" text-anchor="middle">load</text>
+            <text class="tb" x="144" y="659" text-anchor="middle">balancer</text>
           </g>
-
-          <g data-step="10" style="--c: var(--local)">
-            <rect x="10" y="496" width="240" height="60" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="512">10  Parse the HTML</text>
-            <text class="m" x="20" y="525">→ list of what else to fetch</text>
-            <rect class="chip" x="18" y="532" width="34" height="16" rx="3"/><text class="m" x="24" y="543">CSS</text>
-            <rect class="chip" x="56" y="532" width="26" height="16" rx="3"/><text class="m" x="62" y="543">JS</text>
-            <rect class="chip" x="86" y="532" width="32" height="16" rx="3"/><text class="m" x="91" y="543">img</text>
-            <rect class="chip" x="122" y="532" width="118" height="16" rx="3"/><text class="m" x="128" y="543">other domains</text>
-            <path class="ln" d="M130 556V572" marker-end="url(#ah)"/>
+          <g data-id="app" style="--c: var(--origin)">
+            <rect class="ent" x="182" y="624" width="64" height="48" rx="4"/>
+            <text class="tb" x="214" y="645" text-anchor="middle">app</text>
+            <text class="m" x="214" y="659" text-anchor="middle">server</text>
           </g>
-
-          <g data-step="11" style="--c: var(--local)">
-            <rect x="10" y="572" width="240" height="38" rx="5" fill="var(--bg)" stroke="var(--c)" stroke-width="2"/>
-            <text class="tb" x="20" y="588">11  Render</text>
-            <text class="m" x="20" y="602">→ pixels on screen</text>
+          <g data-id="redis" style="--c: var(--origin)">
+            <rect class="ent" x="252" y="624" width="64" height="48" rx="4"/>
+            <text class="tb" x="284" y="645" text-anchor="middle">Redis</text>
+            <text class="m" x="284" y="659" text-anchor="middle">in RAM</text>
+          </g>
+          <g data-id="db" style="--c: var(--origin)">
+            <rect class="ent" x="322" y="624" width="74" height="48" rx="4"/>
+            <text class="tb" x="359" y="645" text-anchor="middle">database</text>
+            <text class="m" x="359" y="659" text-anchor="middle">on SSD</text>
           </g>
         </svg>
         <ul class="key" aria-label="Color key">
@@ -182,7 +208,7 @@
           <li style="--c: var(--far)"><i></i>edge to origin</li>
           <li style="--c: var(--origin)"><i></i>inside the origin</li>
         </ul>
-        <figcaption>Assumes a first visit, a user near a CDN edge, and an origin in another region. Times are rough.</figcaption>
+        <figcaption>Assumes a first visit, a user near a CDN edge, and an origin in another region. Times are rough. The boxes and lines for the step you are reading stay lit.</figcaption>
       </figure>
     </aside>
 
@@ -194,7 +220,7 @@
         <div class="cols">
           <div>
             <h3>What happens</h3>
-            <p>If you type <code>http://example.com</code> or just <code>example.com</code>, the browser checks whether that site has told it to be HTTPS-only (HSTS). If so, the browser upgrades the address itself.</p>
+            <p>You type a URL and press Enter. If it is <code>http://example.com</code> or just <code>example.com</code>, the browser checks whether that site has told it to be HTTPS-only (HSTS). If so, the browser upgrades the address itself.</p>
             <p>Sites send a header, <code>Strict-Transport-Security</code>, and the browser remembers it for a set time. Browsers also ship a built-in list for large sites, so even a first visit is covered.</p>
           </div>
           <div>
@@ -211,7 +237,7 @@
         <div class="cols">
           <div>
             <h3>What happens</h3>
-            <p>The browser keeps a store of earlier responses (HTML, CSS, JS, images, API replies). A memory layer sits in front of files on disk, keyed by URL and the site you were on.</p>
+            <p>The browser keeps a store of earlier responses (HTML, CSS, JS, images, API replies), keyed by URL and the site you were on. It asks the cache, which checks memory (RAM) first and then files on disk (SSD).</p>
             <ul>
               <li><b>Fresh:</b> the server said "reuse this for N seconds" (<code>Cache-Control: max-age</code>) and N has not passed. The browser uses it with no network at all, skipping steps 3 to 9.</li>
               <li><b>Stale:</b> the browser keeps the <code>ETag</code> and later asks "has it changed?". An unchanged page comes back as 304 Not Modified with no body. That still costs a round trip, but not the download.</li>
@@ -392,12 +418,25 @@
     (function () {
       var svg = document.getElementById("flow");
       var steps = document.querySelectorAll(".step[data-step]");
-      var groups = svg ? svg.querySelectorAll("g[data-step]") : [];
+      var els = svg ? svg.querySelectorAll("[data-id]") : [];
       if (!svg || !("IntersectionObserver" in window)) return;
+      var NET = ["browser", "edge", "l-browser-edge"];
+      var MAP = {
+        "1": ["you", "browser", "hsts", "l-you-browser", "l-browser-hsts"],
+        "2": ["browser", "cache", "mem", "disk", "l-browser-cache", "l-mem-disk"],
+        "3": ["browser", "bdns", "osdns", "resolver", "auth", "l-browser-bdns", "l-bdns-osdns", "l-osdns-resolver", "l-resolver-auth"],
+        "4": NET, "5": NET, "6": NET,
+        "7": ["edge", "origin", "l-edge-origin"],
+        "8": ["origin", "lb", "app", "redis", "db"],
+        "9": NET,
+        "10": ["browser", "chips", "edge", "l-browser-edge"],
+        "11": ["browser", "you", "l-you-browser"]
+      };
       function show(id) {
+        var on = MAP[id] || [];
         svg.classList.add("has-active");
-        groups.forEach(function (g) {
-          g.classList.toggle("on", g.getAttribute("data-step") === id);
+        els.forEach(function (el) {
+          el.classList.toggle("on", on.indexOf(el.getAttribute("data-id")) > -1);
         });
       }
       var io = new IntersectionObserver(function (entries) {
@@ -405,7 +444,7 @@
           if (e.isIntersecting) show(e.target.getAttribute("data-step"));
         });
       }, { rootMargin: "-40% 0px -50% 0px" });
-      steps.forEach(function (s) { io.observe(s); });
+      steps.forEach(function (st) { io.observe(st); });
     })();
   </script>
 
