@@ -53,7 +53,8 @@
   .fl.has-active [data-id] { opacity: 0.22; }
   .fl.has-active [data-id].on { opacity: 1; }
   .fl g.on rect.ent { fill: var(--track); stroke-width: 3; }
-  .fl path.on { stroke: var(--fg); stroke-width: 2.5; }
+  .fl path.on, .fl g.on path.ln { stroke: var(--fg); stroke-width: 2.5; }
+  .fl g.on text.m { fill: var(--fg); }
   @media (prefers-reduced-motion: reduce) { .fl [data-id] { transition: none; } }
 
   .stack { display: flex; flex-direction: column; min-width: 0; }
@@ -87,8 +88,8 @@
   <div class="layout">
     <aside>
       <figure>
-        <svg class="fl" id="flow" viewBox="0 0 520 700" role="img" aria-labelledby="fl-title">
-          <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge, and the origin with its load balancer, app, Redis and database.</title>
+        <svg class="fl" id="flow" viewBox="0 0 520 726" role="img" aria-labelledby="fl-title">
+          <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge with the TCP, TLS and HTTP messages exchanged with the browser and a dashed HTTP/3 alternative, and the origin with its load balancer, app, Redis and database.</title>
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
@@ -96,8 +97,8 @@
           </defs>
 
           <text class="m" x="10" y="14">ON YOUR DEVICE</text>
-          <path d="M0 398H520" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
-          <text class="m" x="10" y="412">OVER THE INTERNET</text>
+          <path d="M0 350H520" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+          <text class="m" x="10" y="364">OVER THE INTERNET</text>
 
           <path data-id="l-you-browser" class="ln" d="M74 62H104" marker-end="url(#ah)"/>
           <path data-id="l-browser-hsts" class="ln" d="M214 50H270" marker-end="url(#ah)"/>
@@ -105,10 +106,9 @@
           <path data-id="l-mem-disk" class="ln" d="M380 154H396" marker-end="url(#ah)"/>
           <path data-id="l-browser-bdns" class="ln" d="M214 248H270" marker-end="url(#ah)"/>
           <path data-id="l-bdns-osdns" class="ln" d="M382 248H398" marker-end="url(#ah)"/>
-          <path data-id="l-osdns-resolver" class="ln" d="M454 270V430" marker-end="url(#ah)"/>
-          <path data-id="l-resolver-auth" class="ln" d="M454 474V510" marker-end="url(#ah)"/>
-          <path data-id="l-browser-edge" class="ln" d="M159 358V440" marker-end="url(#ah)"/>
-          <path data-id="l-edge-origin" class="ln" d="M159 510V590" marker-end="url(#ah)"/>
+          <path data-id="l-osdns-resolver" class="ln" d="M454 270V380" marker-end="url(#ah)"/>
+          <path data-id="l-resolver-auth" class="ln" d="M454 424V450" marker-end="url(#ah)"/>
+          <path d="M159 336V588" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="3 4" fill="none"/>
 
           <g data-id="you" style="--c: var(--local)">
             <rect class="ent" x="10" y="40" width="64" height="44" rx="5"/>
@@ -116,14 +116,14 @@
           </g>
 
           <g data-id="browser" style="--c: var(--local)">
-            <rect class="ent" x="104" y="28" width="110" height="330" rx="6"/>
+            <rect class="ent" x="104" y="28" width="110" height="308" rx="6"/>
             <text class="tb" x="159" y="48" text-anchor="middle">Browser</text>
           </g>
           <g data-id="chips" style="--c: var(--local)">
-            <rect class="chip" x="112" y="296" width="46" height="16" rx="3"/><text class="m" x="135" y="308" text-anchor="middle">CSS</text>
-            <rect class="chip" x="162" y="296" width="46" height="16" rx="3"/><text class="m" x="185" y="308" text-anchor="middle">JS</text>
-            <rect class="chip" x="112" y="318" width="46" height="16" rx="3"/><text class="m" x="135" y="330" text-anchor="middle">img</text>
-            <rect class="chip" x="162" y="318" width="46" height="16" rx="3"/><text class="m" x="185" y="330" text-anchor="middle">other</text>
+            <rect class="chip" x="112" y="282" width="46" height="16" rx="3"/><text class="m" x="135" y="294" text-anchor="middle">CSS</text>
+            <rect class="chip" x="162" y="282" width="46" height="16" rx="3"/><text class="m" x="185" y="294" text-anchor="middle">JS</text>
+            <rect class="chip" x="112" y="304" width="46" height="16" rx="3"/><text class="m" x="135" y="316" text-anchor="middle">img</text>
+            <rect class="chip" x="162" y="304" width="46" height="16" rx="3"/><text class="m" x="185" y="316" text-anchor="middle">other</text>
           </g>
 
           <g data-id="hsts" style="--c: var(--local)">
@@ -160,46 +160,59 @@
           </g>
 
           <g data-id="resolver" style="--c: var(--net)">
-            <rect class="ent" x="398" y="430" width="112" height="44" rx="5"/>
-            <text class="tb" x="454" y="449" text-anchor="middle">DNS</text>
-            <text class="m" x="454" y="464" text-anchor="middle">resolver</text>
+            <rect class="ent" x="398" y="380" width="112" height="44" rx="5"/>
+            <text class="tb" x="454" y="399" text-anchor="middle">DNS</text>
+            <text class="m" x="454" y="414" text-anchor="middle">resolver</text>
           </g>
           <g data-id="auth" style="--c: var(--net)">
-            <rect class="ent" x="398" y="510" width="112" height="44" rx="5"/>
-            <text class="tb" x="454" y="529" text-anchor="middle">authoritative</text>
-            <text class="m" x="454" y="544" text-anchor="middle">DNS servers</text>
+            <rect class="ent" x="398" y="450" width="112" height="44" rx="5"/>
+            <text class="tb" x="454" y="469" text-anchor="middle">authoritative</text>
+            <text class="m" x="454" y="484" text-anchor="middle">DNS servers</text>
           </g>
 
           <g data-id="edge" style="--c: var(--net)">
-            <rect class="ent" x="104" y="440" width="110" height="70" rx="5"/>
-            <text class="tb" x="159" y="466" text-anchor="middle">CDN edge</text>
-            <text class="m" x="159" y="484" text-anchor="middle">its own cache</text>
-            <text class="m" x="159" y="498" text-anchor="middle">near you</text>
+            <rect class="ent" x="290" y="372" width="100" height="214" rx="5"/>
+            <text class="tb" x="340" y="392" text-anchor="middle">CDN edge</text>
+            <text class="m" x="340" y="408" text-anchor="middle">run by the</text>
+            <text class="m" x="340" y="421" text-anchor="middle">CDN provider</text>
+            <text class="m" x="340" y="438" text-anchor="middle">its own cache</text>
           </g>
 
+          <g data-id="a-syn"><path class="ln" d="M159 402H288" marker-end="url(#ah)"/><text class="m" x="165" y="398">4  SYN</text></g>
+          <g data-id="a-synack"><path class="ln" d="M288 424H161" marker-end="url(#ah)"/><text class="m" x="165" y="420">4  SYN-ACK</text></g>
+          <g data-id="a-ack"><path class="ln" d="M159 446H288" marker-end="url(#ah)"/><text class="m" x="165" y="442">4  ACK + TLS hello</text></g>
+          <g data-id="a-cert"><path class="ln" d="M288 468H161" marker-end="url(#ah)"/><text class="m" x="165" y="464">5  certificate + keys</text></g>
+          <g data-id="a-fin"><path class="ln" d="M159 490H288" marker-end="url(#ah)"/><text class="m" x="165" y="486">5  done, encrypted</text></g>
+          <g data-id="a-get"><path class="ln" d="M159 512H288" marker-end="url(#ah)"/><text class="m" x="165" y="508">6  GET /page</text></g>
+          <g data-id="a-html"><path class="ln" d="M288 534H161" marker-end="url(#ah)"/><text class="m" x="165" y="530">9  HTML back</text></g>
+          <g data-id="quic"><path class="ln" d="M159 562H288" stroke-dasharray="5 4" marker-end="url(#ah)"/><text class="m" x="165" y="558">4+5 QUIC, 1 handshake</text></g>
+
+          <g data-id="l-eo-req"><path class="ln" d="M320 586V620" marker-end="url(#ah)"/><text class="m" x="312" y="607" text-anchor="end">7  request</text></g>
+          <g data-id="l-eo-res"><path class="ln" d="M360 620V588" marker-end="url(#ah)"/><text class="m" x="366" y="607">back, copy stored</text></g>
+
           <g data-id="origin" style="--c: var(--origin)">
-            <rect class="ent" x="104" y="590" width="300" height="100" rx="5"/>
-            <text class="tb" x="114" y="608">Origin</text>
+            <rect class="ent" x="104" y="620" width="300" height="96" rx="5"/>
+            <text class="tb" x="114" y="638">Origin</text>
           </g>
           <g data-id="lb" style="--c: var(--origin)">
-            <rect class="ent" x="112" y="624" width="64" height="48" rx="4"/>
-            <text class="tb" x="144" y="645" text-anchor="middle">load</text>
-            <text class="tb" x="144" y="659" text-anchor="middle">balancer</text>
+            <rect class="ent" x="112" y="648" width="64" height="52" rx="4"/>
+            <text class="tb" x="144" y="670" text-anchor="middle">load</text>
+            <text class="tb" x="144" y="684" text-anchor="middle">balancer</text>
           </g>
           <g data-id="app" style="--c: var(--origin)">
-            <rect class="ent" x="182" y="624" width="64" height="48" rx="4"/>
-            <text class="tb" x="214" y="645" text-anchor="middle">app</text>
-            <text class="m" x="214" y="659" text-anchor="middle">server</text>
+            <rect class="ent" x="182" y="648" width="64" height="52" rx="4"/>
+            <text class="tb" x="214" y="670" text-anchor="middle">app</text>
+            <text class="m" x="214" y="684" text-anchor="middle">server</text>
           </g>
           <g data-id="redis" style="--c: var(--origin)">
-            <rect class="ent" x="252" y="624" width="64" height="48" rx="4"/>
-            <text class="tb" x="284" y="645" text-anchor="middle">Redis</text>
-            <text class="m" x="284" y="659" text-anchor="middle">in RAM</text>
+            <rect class="ent" x="252" y="648" width="64" height="52" rx="4"/>
+            <text class="tb" x="284" y="670" text-anchor="middle">Redis</text>
+            <text class="m" x="284" y="684" text-anchor="middle">in RAM</text>
           </g>
           <g data-id="db" style="--c: var(--origin)">
-            <rect class="ent" x="322" y="624" width="74" height="48" rx="4"/>
-            <text class="tb" x="359" y="645" text-anchor="middle">database</text>
-            <text class="m" x="359" y="659" text-anchor="middle">on SSD</text>
+            <rect class="ent" x="322" y="648" width="74" height="52" rx="4"/>
+            <text class="tb" x="359" y="670" text-anchor="middle">database</text>
+            <text class="m" x="359" y="684" text-anchor="middle">on SSD</text>
           </g>
         </svg>
         <ul class="key" aria-label="Color key">
@@ -276,7 +289,7 @@
         <div class="cols">
           <div>
             <h3>What happens</h3>
-            <p>The edge is the CDN's server nearest you, not the site's own servers. Your machine opens a connection to it on port 443 with three small messages: SYN ("want to talk"), SYN-ACK ("ok, me too"), ACK ("confirmed"). The first real data can ride with the third message.</p>
+            <p>The edge is the CDN's server nearest you, not the site's own servers. Your machine opens a connection to it on port 443 with three small messages: SYN ("want to talk"), SYN-ACK ("ok, me too"), ACK ("confirmed"). The first real data can ride with the third message. In the diagram these are the first three arrows between the browser and the edge.</p>
             <p>The internet's basic layer only delivers packets, and they can be lost, duplicated or arrive out of order. TCP numbers the bytes, resends what goes missing, puts them back in order and slows down when the network is congested.</p>
           </div>
           <div>
@@ -303,7 +316,7 @@
           <div>
             <h3>Why it is there</h3>
             <p>Without it, anyone on the path could read the page, change it, or pretend to be the site.</p>
-            <p class="aside-note"><b>HTTP/3.</b> It runs over QUIC instead of TCP and merges steps 4 and 5 into one round trip, or none on a repeat connection. A first visit often still uses TCP, because I believe the browser learns about HTTP/3 from a header on the first connection. Browsers differ on this.</p>
+            <p class="aside-note"><b>HTTP/3.</b> It runs over QUIC instead of TCP and merges steps 4 and 5 into one round trip, or none on a repeat connection. The dashed arrow in the diagram is that single handshake. A first visit often still uses TCP, because I believe the browser learns about HTTP/3 from a header on the first connection. Browsers differ on this.</p>
           </div>
         </div>
         <p class="next"><b>Feeds step 6:</b> the HTTP request can now be sent, encrypted.</p>
@@ -331,11 +344,14 @@
         <div class="cols">
           <div>
             <h3>What happens</h3>
-            <p>The edge forwards the request to the site's own servers. CDNs usually keep connections to the origin open, so this costs one round trip and not a fresh TCP and TLS setup. Details differ between CDNs.</p>
+            <p>The edge belongs to the CDN company, which runs servers in many cities. The site owner points the site's DNS name at the CDN, tells it where the origin is, and sets caching rules. The CDN mostly follows the <code>Cache-Control</code> headers the origin sends.</p>
+            <p>On a miss, the edge acts as a proxy. It sends the request to the origin, which sees the edge as its client. CDNs usually keep connections to the origin open, so this costs one round trip and not a fresh TCP and TLS setup. Details differ between CDNs.</p>
           </div>
           <div>
             <h3>Why it is there</h3>
             <p>Someone has to hold the real data. This is often the longest single trip of the whole story, because the origin may be in another region or on another continent.</p>
+            <p>The secure connection from step 5 ended at the edge. The edge to origin connection is a separate one. Many CDNs also add a regional cache between the two, so a miss in one city can be filled nearby. How that works depends on the CDN.</p>
+            <p>Pages that differ for each user usually cannot be cached, so they miss every time. The CDN still helps, because your handshakes happen over the short path to the edge.</p>
           </div>
         </div>
         <p class="next"><b>Feeds step 8:</b> the request arrives at the origin's front door.</p>
@@ -420,16 +436,17 @@
       var steps = document.querySelectorAll(".step[data-step]");
       var els = svg ? svg.querySelectorAll("[data-id]") : [];
       if (!svg || !("IntersectionObserver" in window)) return;
-      var NET = ["browser", "edge", "l-browser-edge"];
       var MAP = {
         "1": ["you", "browser", "hsts", "l-you-browser", "l-browser-hsts"],
         "2": ["browser", "cache", "mem", "disk", "l-browser-cache", "l-mem-disk"],
         "3": ["browser", "bdns", "osdns", "resolver", "auth", "l-browser-bdns", "l-bdns-osdns", "l-osdns-resolver", "l-resolver-auth"],
-        "4": NET, "5": NET, "6": NET,
-        "7": ["edge", "origin", "l-edge-origin"],
+        "4": ["browser", "edge", "a-syn", "a-synack", "a-ack", "quic"],
+        "5": ["browser", "edge", "a-cert", "a-fin", "quic"],
+        "6": ["browser", "edge", "a-get"],
+        "7": ["edge", "origin", "l-eo-req"],
         "8": ["origin", "lb", "app", "redis", "db"],
-        "9": NET,
-        "10": ["browser", "chips", "edge", "l-browser-edge"],
+        "9": ["browser", "edge", "a-html", "l-eo-res"],
+        "10": ["browser", "chips", "edge", "a-get", "a-html"],
         "11": ["browser", "you", "l-you-browser"]
       };
       function show(id) {
