@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-  /* Layout: two ladders on the same log scale (0.1 ns to 1 s): one small operation, then moving 1 MB. */
+  /* Layout: one descent of six layers; each states what it is, how it differs from the one above, and when a system lands there. */
   :root {
     --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --grid: #D5DBE3; --track: #E6EAF0; --rule: #CBD3DD;
     --z1: #8DB8E8; --z2: #6A9FDB; --z3: #4A85CB; --z4: #2F6BB5; --z5: #1F5199; --z6: #123A78;
@@ -22,154 +22,192 @@
     --z1: #3C6A9C; --z2: #4E80B5; --z3: #6496CB; --z4: #7DADDF; --z5: #9AC3EE; --z6: #BDDBFA;
     color-scheme: dark;
   }
-  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.5;
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
     padding-inline: 16px; padding-block: 32px 56px; }
-  .wrap { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 36px; }
+  .wrap { max-width: 800px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
   h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
-  .lede { color: var(--muted); margin: 12px 0 0; max-width: 60ch; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 62ch; }
   .lede b { color: var(--fg); font-weight: 600; }
 
-  .keep { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-  .keep li { border-top: 3px solid var(--c); padding-top: 8px; min-width: 0; }
-  .keep .n { font-family: var(--mono); font-weight: 600; font-size: 1.25rem; display: block; }
-  .keep .w { color: var(--muted); font-size: 0.875rem; }
-  .jumps { margin: 0; color: var(--muted); font-size: 0.9375rem; max-width: 64ch; }
-  .jumps b { color: var(--fg); font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+  .order { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; padding: 0; list-style: none;
+    font-family: var(--mono); font-size: 0.8125rem; }
+  .order li { display: flex; align-items: center; gap: 10px; }
+  .order li + li::before { content: "\2192"; color: var(--muted); }
+  .order span { border-bottom: 3px solid var(--c); padding-bottom: 1px; }
 
-  .ladder { display: flex; flex-direction: column; gap: 24px; }
-  .ladder > header h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
-  .ladder > header p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
-  .axis { position: relative; height: 18px; font-family: var(--mono); font-size: 0.6875rem; color: var(--muted); }
-  .axis span { position: absolute; top: 2px; transform: translateX(-50%); white-space: nowrap; }
-  .axis span:first-child { transform: none; }
-  .axis span:last-child { transform: translateX(-100%); }
-  @media (max-width: 560px) { .axis span.odd { display: none; } }
-
-  .zone { display: flex; flex-direction: column; gap: 12px; }
-  .zone h3 { margin: 0; font-size: 1.125rem; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .zone h3 i { width: 12px; height: 12px; background: var(--c); border-radius: 2px; display: inline-block; flex: none; align-self: center; }
-  .zone h3 small { font-size: 0.875rem; font-weight: 400; color: var(--muted); }
-  .rows { display: flex; flex-direction: column; gap: 14px; }
-  .row { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
-  .name { flex: 1 1 14rem; min-width: 0; font-size: 0.9375rem; }
-  .real { font-family: var(--mono); font-weight: 600; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
-  .human { font-family: var(--mono); font-size: 0.8125rem; color: var(--muted); min-width: 9.5em; text-align: right; font-variant-numeric: tabular-nums; }
-  .track { position: relative; height: 12px; background: var(--track);
+  .layer { display: flex; flex-direction: column; gap: 14px; }
+  .layer h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .layer h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .layer h2 .fig { margin-left: auto; font-family: var(--mono); font-size: 0.9375rem; font-weight: 600; }
+  .meter { position: relative; height: 10px; background: var(--track);
     background-image: repeating-linear-gradient(to right, var(--grid) 0 1px, transparent 1px 10%); border-radius: 2px; }
-  .bar { position: absolute; inset: 0 auto 0 0; background: var(--c); border-radius: 0 4px 4px 0; }
+  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--c); border-radius: 0 4px 4px 0; }
+  .scale { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: -6px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+  .cols > div { min-width: 0; }
+  .cols h3 { margin: 0 0 4px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .cols p { margin: 0 0 8px; }
+  .cols ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; }
+  @media (max-width: 620px) { .cols { grid-template-columns: 1fr; } }
+
+  .jump { display: flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: 0.8125rem; color: var(--muted); }
+  .jump::before, .jump::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .jump b { color: var(--fg); font-weight: 600; }
 
   .note { border-top: 1px solid var(--rule); padding-top: 16px; color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
   .note b { color: var(--fg); font-weight: 600; }
-  @media (max-width: 480px) { .human { text-align: left; min-width: 0; flex-basis: 100%; } }
 </style>
 
 <main class="wrap">
   <header>
     <h1>Latency Ladder</h1>
-    <p class="lede">Two ladders, because two different things get measured: how long <b>one small operation</b> takes, and how long it takes to <b>move 1 MB</b>. Bars share one log scale, so each gridline is 10&times; the last. The grey figure is the same delay if <b>1 nanosecond lasted 1 second</b>.</p>
+    <p class="lede">For system design, the order matters more than the exact numbers. Each layer below is slower than the one above it, and each one is where a different kind of request ends up. Think of the common path through your system and ask <b>which layer it touches</b>.</p>
   </header>
 
-  <section aria-label="Numbers to keep">
-    <ul class="keep" id="keep"></ul>
+  <ol class="order" aria-label="Order of the layers">
+    <li style="--c: var(--z1)"><span>chip</span></li>
+    <li style="--c: var(--z2)"><span>RAM</span></li>
+    <li style="--c: var(--z3)"><span>SSD</span></li>
+    <li style="--c: var(--z4)"><span>datacenter</span></li>
+    <li style="--c: var(--z5)"><span>HDD</span></li>
+    <li style="--c: var(--z6)"><span>ocean</span></li>
+  </ol>
+
+  <section class="layer" style="--c: var(--z1)">
+    <h2><span class="rank">1</span>On the chip <span class="fig">~1 ns</span></h2>
+    <div class="meter" aria-hidden="true"><i style="width: 10%"></i></div>
+    <div class="scale">if 1 ns = 1 sec: about 1 second</div>
+    <div class="cols">
+      <div>
+        <h3>What it is</h3>
+        <p>The L1, L2 and L3 caches, built into the processor itself. L1 is tiny and private to a core, L2 is a bit larger, and L3 is shared by all cores. Each level is bigger and a few times slower than the one before.</p>
+        <p>Nothing here is persistent, and you don't address it directly. The CPU decides what to keep.</p>
+      </div>
+      <div>
+        <h3>You land here when</h3>
+        <ul>
+          <li>A hot loop works over a small, contiguous array.</li>
+          <li>Data was just used, so it is still cached.</li>
+          <li>Several threads fight over one lock or one cache line. Even that costs tens of nanoseconds.</li>
+        </ul>
+      </div>
+    </div>
   </section>
 
-  <p class="jumps">For one small operation, RAM is <b>200&times;</b> slower than L1. An SSD read is <b>1,000&times;</b> slower than RAM. A datacenter round trip is <b>5&times;</b> slower than that, a disk seek <b>20&times;</b> slower again, and crossing the ocean <b>15&times;</b> slower than the seek.</p>
+  <div class="jump"><span>about <b>100&times;</b> slower</span></div>
 
-  <section class="ladder" id="small" aria-label="One small operation, log scale"></section>
-  <section class="ladder" id="mb" aria-label="Moving 1 MB, log scale"></section>
+  <section class="layer" style="--c: var(--z2)">
+    <h2><span class="rank">2</span>RAM <span class="fig">~100 ns</span></h2>
+    <div class="meter" aria-hidden="true"><i style="width: 30%"></i></div>
+    <div class="scale">if 1 ns = 1 sec: about 2 minutes</div>
+    <div class="cols">
+      <div>
+        <h3>How it differs</h3>
+        <p>Memory chips on the other side of a bus, not on the processor. You get gigabytes to terabytes instead of megabytes, at the cost of a trip off the chip every time the cache misses.</p>
+        <p>Still not persistent. A restart empties it.</p>
+      </div>
+      <div>
+        <h3>You land here when</h3>
+        <ul>
+          <li>Your working set is bigger than the CPU caches, such as a large in-process hash map.</li>
+          <li>You chase pointers through a big structure, and every hop is a cache miss.</li>
+          <li>A service keeps its data in memory, as a cache or an in-memory database.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
-  <p class="note"><b>Notes:</b> SSD random read is quoted as about 100 &micro;s; real drives range from roughly 16 to 150 &micro;s. The 1 MB network figure is computed from bandwidth (8 megabits at 1 Gbps), not measured. Moving 1 MB is mostly transfer time, so it says little about the wait for a single small request. The ocean round trip is 150 ms, which is 150,000,000 ns.</p>
+  <div class="jump"><span>about <b>1,000&times;</b> slower</span></div>
+
+  <section class="layer" style="--c: var(--z3)">
+    <h2><span class="rank">3</span>SSD (flash) <span class="fig">~100 &micro;s</span></h2>
+    <div class="meter" aria-hidden="true"><i style="width: 60%"></i></div>
+    <div class="scale">if 1 ns = 1 sec: about 1 day</div>
+    <div class="cols">
+      <div>
+        <h3>How it differs</h3>
+        <p>The first layer that survives a power cut. A read costs about a thousand times what RAM does, but you get terabytes at a fraction of the price per byte.</p>
+        <p>This figure is for a small random read. Real drives range from roughly 16 to 150 &micro;s.</p>
+      </div>
+      <div>
+        <h3>You land here when</h3>
+        <ul>
+          <li>A database needs a page that isn't in its memory buffer.</li>
+          <li>A cache is cold after a restart.</li>
+          <li>A write must be durable before you acknowledge it, so the log is flushed to disk.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="jump"><span>about <b>5&times;</b> slower</span></div>
+
+  <section class="layer" style="--c: var(--z4)">
+    <h2><span class="rank">4</span>Same datacenter <span class="fig">~0.5 ms</span></h2>
+    <div class="meter" aria-hidden="true"><i style="width: 67%"></i></div>
+    <div class="scale">if 1 ns = 1 sec: about 6 days</div>
+    <div class="cols">
+      <div>
+        <h3>How it differs</h3>
+        <p>Reaching another machine costs more than reading a local SSD. The request crosses the network card, switches and the operating system on both ends, and the other machine has to do its work before replying.</p>
+        <p>That is why moving data off the local box has to buy you something, such as sharing, scale or fault tolerance.</p>
+      </div>
+      <div>
+        <h3>You land here when</h3>
+        <ul>
+          <li>One service calls another.</li>
+          <li>You read from a remote cache or database.</li>
+          <li>A replicated write waits for a majority of replicas. A consensus commit costs about one round trip plus the followers' disk flush.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="jump"><span>about <b>20&times;</b> slower</span></div>
+
+  <section class="layer" style="--c: var(--z5)">
+    <h2><span class="rank">5</span>Spinning disk (HDD) <span class="fig">~10 ms</span></h2>
+    <div class="meter" aria-hidden="true"><i style="width: 80%"></i></div>
+    <div class="scale">if 1 ns = 1 sec: about 4 months</div>
+    <div class="cols">
+      <div>
+        <h3>How it differs</h3>
+        <p>A mechanical arm has to move and a platter has to spin to the right spot. Random access is painfully slow, but once the head is in place, sequential reads are fast and the storage is cheap.</p>
+        <p>The cost is in the seek, so one big read beats many small ones.</p>
+      </div>
+      <div>
+        <h3>You land here when</h3>
+        <ul>
+          <li>Scanning large files in bulk, such as analytics data or backups.</li>
+          <li>Reading archives or cold data nobody has touched in a while.</li>
+          <li>A database does many random reads that miss every faster layer.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="jump"><span>about <b>15&times;</b> slower</span></div>
+
+  <section class="layer" style="--c: var(--z6)">
+    <h2><span class="rank">6</span>Across the ocean <span class="fig">~150 ms</span></h2>
+    <div class="meter" aria-hidden="true"><i style="width: 92%"></i></div>
+    <div class="scale">if 1 ns = 1 sec: about 5 years</div>
+    <div class="cols">
+      <div>
+        <h3>How it differs</h3>
+        <p>Light in fibre covers about 200 km per millisecond, so California to the Netherlands and back can never be much below about 90 ms, and real paths take longer. Faster hardware doesn't help. The only fix is not to make the trip.</p>
+        <p>Every extra round trip multiplies it. A new connection with a secure handshake needs several before any data moves.</p>
+      </div>
+      <div>
+        <h3>You land here when</h3>
+        <ul>
+          <li>Users in one region hit a backend in another.</li>
+          <li>A write must be confirmed by a replica on another continent.</li>
+          <li>A chatty protocol makes many sequential requests across regions.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <p class="note"><b>Reading the numbers:</b> these are for a small access or message. Moving a megabyte or more is limited by bandwidth, so the order can shift. Reading 1 MB from an SSD takes about 1 ms, and sending it over a 1 Gbps link takes about 8 ms. Treat every figure as an order of magnitude.</p>
 </main>
-
-<script>
-  var SMALL = [
-    { name: "On the chip", sub: "Nanoseconds", c: "--z1", rows: [
-      ["L1 cache reference", 0.5], ["Branch mispredict", 5], ["L2 cache reference", 7], ["Mutex lock / unlock", 25] ] },
-    { name: "Main memory", sub: "RAM", c: "--z2", rows: [
-      ["Main memory reference", 100] ] },
-    { name: "Flash storage", sub: "SSD", c: "--z3", rows: [
-      ["SSD random read (small block)", 100000] ] },
-    { name: "Same datacenter", sub: "Network", c: "--z4", rows: [
-      ["Round trip, small message", 500000] ] },
-    { name: "Spinning disk", sub: "HDD", c: "--z5", rows: [
-      ["Disk seek", 10000000] ] },
-    { name: "Across the ocean", sub: "Intercontinental", c: "--z6", rows: [
-      ["Round trip, small message, California → Netherlands → California", 150000000] ] }
-  ];
-  var MB = [
-    { name: "Main memory", sub: "RAM", c: "--z2", rows: [
-      ["Read 1 MB sequentially from memory", 250000] ] },
-    { name: "Flash storage", sub: "SSD", c: "--z3", rows: [
-      ["Read 1 MB sequentially from SSD", 1000000] ] },
-    { name: "Same datacenter", sub: "Network", c: "--z4", rows: [
-      ["Send 1 MB over 1 Gbps (computed)", 8000000] ] },
-    { name: "Spinning disk", sub: "HDD", c: "--z5", rows: [
-      ["Read 1 MB sequentially from disk", 20000000] ] }
-  ];
-  var KEEP = [
-    ["100 ns", "RAM reference", "--z2"], ["100 µs", "SSD random read", "--z3"], ["0.5 ms", "datacenter round trip", "--z4"],
-    ["10 ms", "disk seek", "--z5"], ["150 ms", "across the ocean", "--z6"]
-  ];
-  var MIN_LOG = -1, DECADES = 10;
-  var TICKS = ["0.1 ns", "1 ns", "10 ns", "100 ns", "1 µs", "10 µs", "100 µs", "1 ms", "10 ms", "100 ms", "1 s"];
-
-  function trim(x) { return String(Math.round(x * 10) / 10).replace(/\.0$/, ""); }
-  function real(ns) {
-    if (ns < 1e3) return trim(ns) + " ns";
-    if (ns < 1e6) return trim(ns / 1e3) + " µs";
-    if (ns < 1e9) return trim(ns / 1e6) + " ms";
-    return trim(ns / 1e9) + " s";
-  }
-  function human(ns) {
-    var s = ns;
-    if (s < 60) return "≈ " + trim(s) + " sec";
-    if (s < 3600) return "≈ " + trim(s / 60) + " min";
-    if (s < 86400) return "≈ " + trim(s / 3600) + " hours";
-    if (s < 86400 * 60) return "≈ " + trim(s / 86400) + " days";
-    if (s < 31557600) return "≈ " + trim(s / 2629800) + " months";
-    return "≈ " + trim(s / 31557600) + " years";
-  }
-  function el(tag, cls, text) {
-    var e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  }
-
-  var keep = document.getElementById("keep");
-  KEEP.forEach(function (k) {
-    var li = el("li"); li.style.setProperty("--c", "var(" + k[2] + ")");
-    li.appendChild(el("span", "n", k[0])); li.appendChild(el("span", "w", k[1]));
-    keep.appendChild(li);
-  });
-
-  function ladder(id, title, blurb, zones) {
-    var root = document.getElementById(id);
-    var header = el("header"); header.appendChild(el("h2", "", title)); header.appendChild(el("p", "", blurb));
-    root.appendChild(header);
-    var axis = el("div", "axis"); axis.setAttribute("aria-hidden", "true");
-    TICKS.forEach(function (t, i) {
-      var s = el("span", i % 2 ? "odd" : "", t); s.style.left = (i * 100 / DECADES) + "%"; axis.appendChild(s);
-    });
-    root.appendChild(axis);
-    zones.forEach(function (z) {
-      var sec = el("div", "zone"); sec.style.setProperty("--c", "var(" + z.c + ")");
-      var h = el("h3"); h.appendChild(el("i")); h.appendChild(document.createTextNode(z.name)); h.appendChild(el("small", "", z.sub));
-      sec.appendChild(h);
-      var rows = el("div", "rows");
-      z.rows.forEach(function (r) {
-        var row = el("div", "row"), head = el("div", "head");
-        head.appendChild(el("span", "name", r[0]));
-        head.appendChild(el("span", "real", real(r[1])));
-        head.appendChild(el("span", "human", human(r[1])));
-        var track = el("div", "track"), bar = el("div", "bar");
-        bar.style.width = ((Math.log10(r[1]) - MIN_LOG) / DECADES * 100) + "%";
-        track.appendChild(bar); row.appendChild(head); row.appendChild(track); rows.appendChild(row);
-      });
-      sec.appendChild(rows); root.appendChild(sec);
-    });
-  }
-  ladder("small", "One small operation", "How long a single access or message takes, whatever the size. This is the wait before anything happens.", SMALL);
-  ladder("mb", "Moving 1 MB", "How long one megabyte takes once it is flowing. This depends on bandwidth, so it is not comparable to the ladder above.", MB);
-</script>
