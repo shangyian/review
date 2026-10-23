@@ -34,9 +34,6 @@
   .layout figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
   .layout figcaption { font-size: 0.75rem; color: var(--muted); }
   .layout svg { width: 100%; max-height: calc(100vh - 150px); }
-  .key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--muted); }
-  .key li { display: flex; align-items: center; gap: 6px; }
-  .key i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); display: inline-block; }
   @media (max-width: 860px) {
     .layout { grid-template-columns: minmax(0, 1fr); }
     .layout aside { position: static; max-width: 520px; }
@@ -91,7 +88,7 @@
     <aside>
       <figure>
         <svg class="fl" id="flow" viewBox="0 0 520 726" role="img" aria-labelledby="fl-title">
-          <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge with the TCP, TLS and HTTP messages exchanged with the browser and a dashed HTTP/3 alternative, and the origin with its load balancer, app, Redis and database.</title>
+          <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge with the TCP, TLS and HTTP messages exchanged with the browser and a dashed HTTP/3 alternative, and the origin with its load balancer, app, cache and database.</title>
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
               <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
@@ -208,8 +205,8 @@
           </g>
           <g data-id="redis" style="--c: var(--origin)">
             <rect class="ent" x="252" y="648" width="64" height="52" rx="4"/>
-            <text class="tb" x="284" y="670" text-anchor="middle">Redis</text>
-            <text class="m" x="284" y="684" text-anchor="middle">in RAM</text>
+            <text class="tb" x="284" y="670" text-anchor="middle">cache</text>
+            <text class="m" x="284" y="684" text-anchor="middle">e.g. Redis</text>
           </g>
           <g data-id="db" style="--c: var(--origin)">
             <rect class="ent" x="322" y="648" width="74" height="52" rx="4"/>
@@ -217,12 +214,6 @@
             <text class="m" x="359" y="684" text-anchor="middle">on SSD</text>
           </g>
         </svg>
-        <ul class="key" aria-label="Color key">
-          <li style="--c: var(--local)"><i></i>on your device</li>
-          <li style="--c: var(--net)"><i></i>over the internet</li>
-          <li style="--c: var(--far)"><i></i>edge to origin</li>
-          <li style="--c: var(--origin)"><i></i>inside the origin</li>
-        </ul>
         <figcaption>Assumes a first visit, a user near a CDN edge, and an origin in another region. Times are rough. The boxes and lines for the step you are reading stay lit.</figcaption>
       </figure>
     </aside>
