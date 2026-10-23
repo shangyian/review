@@ -53,7 +53,9 @@
   .fl.has-active [data-id] { opacity: 0.22; }
   .fl.has-active [data-id].on { opacity: 1; }
   .fl g.on rect.ent { fill: var(--track); stroke-width: 3; }
-  .fl path.on, .fl g.on path.ln { stroke: var(--fg); stroke-width: 2; }
+  .fl path.on, .fl g.on path.ln { stroke: var(--fg); stroke-width: 1.75; }
+  .fl.has-active > path.ln { opacity: 0.5; }
+  .fl.has-active .arrowg { opacity: 0.5; }
   .fl g.on text.m { fill: var(--fg); }
   @media (prefers-reduced-motion: reduce) { .fl [data-id] { transition: none; } }
 
@@ -91,7 +93,7 @@
         <svg class="fl" id="flow" viewBox="0 0 520 726" role="img" aria-labelledby="fl-title">
           <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge with the TCP, TLS and HTTP messages exchanged with the browser and a dashed HTTP/3 alternative, and the origin with its load balancer, app, Redis and database.</title>
           <defs>
-            <marker id="ah" viewBox="0 0 8 8" refX="6" refY="4" markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" orient="auto">
+            <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
               <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
             </marker>
           </defs>
@@ -178,17 +180,17 @@
             <text class="m" x="340" y="438" text-anchor="middle">its own cache</text>
           </g>
 
-          <g data-id="a-syn"><path class="ln" d="M159 402H288" marker-end="url(#ah)"/><text class="m" x="165" y="398">4  SYN</text></g>
-          <g data-id="a-synack"><path class="ln" d="M288 424H161" marker-end="url(#ah)"/><text class="m" x="165" y="420">4  SYN-ACK</text></g>
-          <g data-id="a-ack"><path class="ln" d="M159 446H288" marker-end="url(#ah)"/><text class="m" x="165" y="442">4  ACK + TLS hello</text></g>
-          <g data-id="a-cert"><path class="ln" d="M288 468H161" marker-end="url(#ah)"/><text class="m" x="165" y="464">5  certificate + keys</text></g>
-          <g data-id="a-fin"><path class="ln" d="M159 490H288" marker-end="url(#ah)"/><text class="m" x="165" y="486">5  done, encrypted</text></g>
-          <g data-id="a-get"><path class="ln" d="M159 512H288" marker-end="url(#ah)"/><text class="m" x="165" y="508">6  GET /page</text></g>
-          <g data-id="a-html"><path class="ln" d="M288 534H161" marker-end="url(#ah)"/><text class="m" x="165" y="530">9  HTML back</text></g>
-          <g data-id="quic"><path class="ln" d="M159 562H288" stroke-dasharray="5 4" marker-end="url(#ah)"/><text class="m" x="165" y="558">4+5 QUIC, 1 handshake</text></g>
+          <g class="arrowg" data-id="a-syn"><path class="ln" d="M159 402H288" marker-end="url(#ah)"/><text class="m" x="165" y="398">4  SYN</text></g>
+          <g class="arrowg" data-id="a-synack"><path class="ln" d="M288 424H161" marker-end="url(#ah)"/><text class="m" x="165" y="420">4  SYN-ACK</text></g>
+          <g class="arrowg" data-id="a-ack"><path class="ln" d="M159 446H288" marker-end="url(#ah)"/><text class="m" x="165" y="442">4  ACK + TLS hello</text></g>
+          <g class="arrowg" data-id="a-cert"><path class="ln" d="M288 468H161" marker-end="url(#ah)"/><text class="m" x="165" y="464">5  certificate + keys</text></g>
+          <g class="arrowg" data-id="a-fin"><path class="ln" d="M159 490H288" marker-end="url(#ah)"/><text class="m" x="165" y="486">5  done, encrypted</text></g>
+          <g class="arrowg" data-id="a-get"><path class="ln" d="M159 512H288" marker-end="url(#ah)"/><text class="m" x="165" y="508">6  GET /page</text></g>
+          <g class="arrowg" data-id="a-html"><path class="ln" d="M288 534H161" marker-end="url(#ah)"/><text class="m" x="165" y="530">9  HTML back</text></g>
+          <g class="arrowg" data-id="quic"><path class="ln" d="M159 562H288" stroke-dasharray="5 4" marker-end="url(#ah)"/><text class="m" x="165" y="558">4+5 QUIC, 1 handshake</text></g>
 
-          <g data-id="l-eo-req"><path class="ln" d="M320 586V620" marker-end="url(#ah)"/><text class="m" x="312" y="607" text-anchor="end">7  request</text></g>
-          <g data-id="l-eo-res"><path class="ln" d="M360 620V588" marker-end="url(#ah)"/><text class="m" x="366" y="607">back, copy stored</text></g>
+          <g class="arrowg" data-id="l-eo-req"><path class="ln" d="M320 586V620" marker-end="url(#ah)"/><text class="m" x="312" y="607" text-anchor="end">7  request</text></g>
+          <g class="arrowg" data-id="l-eo-res"><path class="ln" d="M360 620V588" marker-end="url(#ah)"/><text class="m" x="366" y="607">back, copy stored</text></g>
 
           <g data-id="origin" style="--c: var(--origin)">
             <rect class="ent" x="104" y="620" width="300" height="96" rx="5"/>
