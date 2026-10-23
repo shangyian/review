@@ -24,7 +24,21 @@
   }
   body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
     padding-inline: 16px; padding-block: 32px 56px; }
-  .wrap { max-width: 800px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  .wrap { max-width: 1100px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .layout aside { position: sticky; top: 16px; }
+  .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .layout figcaption { font-size: 0.75rem; color: var(--muted); }
+  .stack { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout aside { position: static; max-width: 360px; }
+  }
+  .dg .box { fill: var(--track); stroke: var(--rule); stroke-width: 1; }
+  .dg .ln { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .dg .t { fill: var(--fg); font: 11px var(--mono); }
+  .dg .m { fill: var(--muted); font: 10px var(--mono); }
+  .dg .mid { text-anchor: middle; }
   h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
   .lede { color: var(--muted); margin: 12px 0 0; max-width: 62ch; }
   .lede b { color: var(--fg); font-weight: 600; }
@@ -43,7 +57,7 @@
     background-image: repeating-linear-gradient(to right, var(--grid) 0 1px, transparent 1px 10%); border-radius: 2px; }
   .meter i { position: absolute; inset: 0 auto 0 0; background: var(--c); border-radius: 0 4px 4px 0; }
   .scale { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: -6px; }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px 32px; }
   .cols > div { min-width: 0; }
   .cols h3 { margin: 0 0 4px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   .cols p { margin: 0 0 8px; }
@@ -72,6 +86,69 @@
     <li style="--c: var(--z5)"><span>HDD</span></li>
     <li style="--c: var(--z6)"><span>ocean</span></li>
   </ol>
+
+<div class="layout">
+  <aside>
+    <figure>
+      <svg class="dg" viewBox="0 0 300 646" width="100%" role="img" aria-labelledby="dg-title">
+        <title id="dg-title">A CPU chip with cores, L1, L2 and L3 caches and a memory controller, connected by a memory bus to RAM, and by PCIe or SATA links to an SSD, a network card and a hard disk.</title>
+        <rect x="6" y="6" width="288" height="298" rx="8" fill="none" stroke="var(--z1)" stroke-width="2"/>
+        <text class="t" x="20" y="26">CPU chip (two of many cores)</text>
+
+        <rect class="box" x="20" y="38" width="120" height="98" rx="4"/>
+        <text class="m mid" x="80" y="54">core 0</text>
+        <rect x="30" y="62" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+        <text class="t mid" x="80" y="79">L1 · ~1 ns</text>
+        <rect x="30" y="96" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+        <text class="t mid" x="80" y="113">L2 · ~5 ns</text>
+
+        <rect class="box" x="160" y="38" width="120" height="98" rx="4"/>
+        <text class="m mid" x="220" y="54">core 1</text>
+        <rect x="170" y="62" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+        <text class="t mid" x="220" y="79">L1 · ~1 ns</text>
+        <rect x="170" y="96" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+        <text class="t mid" x="220" y="113">L2 · ~5 ns</text>
+
+        <path class="ln" d="M80 136V158M220 136V158M150 188V204"/>
+        <rect x="20" y="158" width="260" height="30" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+        <text class="t mid" x="150" y="177">L3, shared · ~10–40 ns</text>
+        <rect class="box" x="20" y="204" width="260" height="28" rx="3"/>
+        <text class="t mid" x="150" y="222">memory controller</text>
+
+        <path d="M150 232V340" stroke="var(--z2)" stroke-width="3" fill="none"/>
+        <text class="m" x="160" y="326">memory bus</text>
+        <rect x="80" y="340" width="140" height="84" rx="4" fill="none" stroke="var(--z2)" stroke-width="2"/>
+        <text class="t mid" x="150" y="358">RAM · ~100 ns</text>
+        <rect x="90" y="368" width="36" height="34" rx="2" fill="var(--z2)"/>
+        <rect x="132" y="368" width="36" height="34" rx="2" fill="var(--z2)"/>
+        <rect x="174" y="368" width="36" height="34" rx="2" fill="var(--z2)"/>
+        <text class="m mid" x="150" y="416">gone at power off</text>
+
+        <path class="ln" d="M52 304V450H248M150 450V470M248 450V470M52 450V470"/>
+        <text class="m mid" x="150" y="442">PCIe / SATA links</text>
+        <rect x="10" y="470" width="84" height="44" rx="4" fill="var(--bg)" stroke="var(--z3)" stroke-width="2"/>
+        <text class="t mid" x="52" y="488">SSD</text>
+        <text class="m mid" x="52" y="504">~100 µs</text>
+        <rect x="108" y="470" width="84" height="44" rx="4" fill="var(--bg)" stroke="var(--z4)" stroke-width="2"/>
+        <text class="t mid" x="150" y="488">network</text>
+        <text class="m mid" x="150" y="504">card</text>
+        <rect x="206" y="470" width="84" height="44" rx="4" fill="var(--bg)" stroke="var(--z5)" stroke-width="2"/>
+        <text class="t mid" x="248" y="488">HDD</text>
+        <text class="m mid" x="248" y="504">~10 ms</text>
+
+        <path d="M150 514V548" stroke="var(--z4)" stroke-width="2" fill="none"/>
+        <rect x="65" y="548" width="170" height="34" rx="4" fill="var(--bg)" stroke="var(--z4)" stroke-width="2"/>
+        <text class="t mid" x="150" y="563">other machines</text>
+        <text class="m mid" x="150" y="576">same datacenter ~0.5 ms</text>
+        <path d="M150 582V606" stroke="var(--z6)" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
+        <rect x="65" y="606" width="170" height="34" rx="4" fill="var(--bg)" stroke="var(--z6)" stroke-width="2"/>
+        <text class="t mid" x="150" y="621">another continent</text>
+        <text class="m mid" x="150" y="634">round trip ~150 ms</text>
+      </svg>
+      <figcaption>Simplified. Cache sizes and latencies vary by chip. The I/O links are separate in practice.</figcaption>
+    </figure>
+  </aside>
+  <div class="stack">
 
   <section class="layer" style="--c: var(--z1)">
     <h2><span class="rank">1</span>On the chip <span class="fig">~1 ns</span></h2>
@@ -208,6 +285,9 @@
       </div>
     </div>
   </section>
+
+  </div>
+</div>
 
   <p class="note"><b>Reading the numbers:</b> these are for a small access or message. Moving a megabyte or more is limited by bandwidth, so the order can shift. Reading 1 MB from an SSD takes about 1 ms, and sending it over a 1 Gbps link takes about 8 ms. Treat every figure as an order of magnitude.</p>
 </main>
