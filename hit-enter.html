@@ -46,14 +46,14 @@
   .fl .t { fill: var(--fg); font: 11px var(--mono); }
   .fl .tb { fill: var(--fg); font: 600 11px var(--mono); }
   .fl .m { fill: var(--muted); font: 10px var(--mono); }
-  .fl .ln { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .fl .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
   .fl .chip { fill: var(--track); stroke: var(--rule); }
   .fl rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
   .fl [data-id] { transition: opacity 0.25s; }
   .fl.has-active [data-id] { opacity: 0.22; }
   .fl.has-active [data-id].on { opacity: 1; }
   .fl g.on rect.ent { fill: var(--track); stroke-width: 3; }
-  .fl path.on, .fl g.on path.ln { stroke: var(--fg); stroke-width: 2.5; }
+  .fl path.on, .fl g.on path.ln { stroke: var(--fg); stroke-width: 2; }
   .fl g.on text.m { fill: var(--fg); }
   @media (prefers-reduced-motion: reduce) { .fl [data-id] { transition: none; } }
 
@@ -91,7 +91,7 @@
         <svg class="fl" id="flow" viewBox="0 0 520 726" role="img" aria-labelledby="fl-title">
           <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge with the TCP, TLS and HTTP messages exchanged with the browser and a dashed HTTP/3 alternative, and the origin with its load balancer, app, Redis and database.</title>
           <defs>
-            <marker id="ah" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <marker id="ah" viewBox="0 0 8 8" refX="6" refY="4" markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" orient="auto">
               <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
             </marker>
           </defs>
