@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-  /* Layout: one column of zones, each a short list of bars on a shared log scale (1 ns to 1 s). */
+  /* Layout: two ladders on the same log scale (0.1 ns to 1 s): one small operation, then moving 1 MB. */
   :root {
     --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --grid: #D5DBE3; --track: #E6EAF0; --rule: #CBD3DD;
     --z1: #8DB8E8; --z2: #6A9FDB; --z3: #4A85CB; --z4: #2F6BB5; --z5: #1F5199; --z6: #123A78;
@@ -24,7 +24,7 @@
   }
   body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.5;
     padding-inline: 16px; padding-block: 32px 56px; }
-  .wrap { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+  .wrap { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 36px; }
   h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
   .lede { color: var(--muted); margin: 12px 0 0; max-width: 60ch; }
   .lede b { color: var(--fg); font-weight: 600; }
@@ -36,18 +36,19 @@
   .jumps { margin: 0; color: var(--muted); font-size: 0.9375rem; max-width: 64ch; }
   .jumps b { color: var(--fg); font-family: var(--mono); font-weight: 600; white-space: nowrap; }
 
-  .chart { display: flex; flex-direction: column; gap: 28px; }
-  .axis { position: relative; height: 18px; font-family: var(--mono); font-size: 0.6875rem; color: var(--muted);
-    position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 2; padding-block: 2px; box-sizing: content-box; }
+  .ladder { display: flex; flex-direction: column; gap: 24px; }
+  .ladder > header h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+  .ladder > header p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+  .axis { position: relative; height: 18px; font-family: var(--mono); font-size: 0.6875rem; color: var(--muted); }
   .axis span { position: absolute; top: 2px; transform: translateX(-50%); white-space: nowrap; }
   .axis span:first-child { transform: none; }
   .axis span:last-child { transform: translateX(-100%); }
   @media (max-width: 560px) { .axis span.odd { display: none; } }
 
   .zone { display: flex; flex-direction: column; gap: 12px; }
-  .zone h2 { margin: 0; font-size: 1.125rem; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .zone h2 i { width: 12px; height: 12px; background: var(--c); border-radius: 2px; display: inline-block; flex: none; align-self: center; }
-  .zone h2 small { font-size: 0.875rem; font-weight: 400; color: var(--muted); }
+  .zone h3 { margin: 0; font-size: 1.125rem; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .zone h3 i { width: 12px; height: 12px; background: var(--c); border-radius: 2px; display: inline-block; flex: none; align-self: center; }
+  .zone h3 small { font-size: 0.875rem; font-weight: 400; color: var(--muted); }
   .rows { display: flex; flex-direction: column; gap: 14px; }
   .row { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
@@ -66,40 +67,52 @@
 <main class="wrap">
   <header>
     <h1>Latency Ladder</h1>
-    <p class="lede">Every rung is slower than the one above it. Bars sit on one log scale, so each gridline is 10&times; the last. The grey figure on each row is the same delay if <b>1 nanosecond lasted 1 second</b>.</p>
+    <p class="lede">Two ladders, because two different things get measured: how long <b>one small operation</b> takes, and how long it takes to <b>move 1 MB</b>. Bars share one log scale, so each gridline is 10&times; the last. The grey figure is the same delay if <b>1 nanosecond lasted 1 second</b>.</p>
   </header>
 
   <section aria-label="Numbers to keep">
     <ul class="keep" id="keep"></ul>
   </section>
 
-  <p class="jumps">RAM is <b>200&times;</b> slower than L1. A datacenter round trip is <b>5,000&times;</b> slower than RAM. A disk seek is <b>20&times;</b> slower than that, and crossing the ocean is <b>15&times;</b> slower again.</p>
+  <p class="jumps">For one small operation, RAM is <b>200&times;</b> slower than L1. An SSD read is <b>1,000&times;</b> slower than RAM. A datacenter round trip is <b>5&times;</b> slower than that, a disk seek <b>20&times;</b> slower again, and crossing the ocean <b>15&times;</b> slower than the seek.</p>
 
-  <section class="chart" id="chart" aria-label="Latency by layer, log scale"></section>
+  <section class="ladder" id="small" aria-label="One small operation, log scale"></section>
+  <section class="ladder" id="mb" aria-label="Moving 1 MB, log scale"></section>
 
-  <p class="note"><b>Source list corrected:</b> it gave the California&ndash;Netherlands&ndash;California round trip as 150,000 ns, but 150 ms is 150,000,000 ns, which is what the bar uses. The SSD figure is read as 1 MB sequential, matching the disk rows.</p>
+  <p class="note"><b>Notes:</b> SSD random read is quoted as about 100 &micro;s; real drives range from roughly 16 to 150 &micro;s. The 1 MB network figure is computed from bandwidth (8 megabits at 1 Gbps), not measured. Moving 1 MB is mostly transfer time, so it says little about the wait for a single small request. The ocean round trip is 150 ms, which is 150,000,000 ns.</p>
 </main>
 
 <script>
-  var ZONES = [
+  var SMALL = [
     { name: "On the chip", sub: "Nanoseconds", c: "--z1", rows: [
       ["L1 cache reference", 0.5], ["Branch mispredict", 5], ["L2 cache reference", 7], ["Mutex lock / unlock", 25] ] },
     { name: "Main memory", sub: "RAM", c: "--z2", rows: [
-      ["Main memory reference", 100], ["Compress 1 KB with Zippy", 3000], ["Read 1 MB sequentially from memory", 250000] ] },
-    { name: "Same datacenter", sub: "Network", c: "--z3", rows: [
-      ["Send 2 KB over 1 Gbps", 20000], ["Round trip within the datacenter", 500000] ] },
-    { name: "Flash storage", sub: "SSD", c: "--z4", rows: [
-      ["Read 1 MB sequentially from SSD", 1000000] ] },
+      ["Main memory reference", 100] ] },
+    { name: "Flash storage", sub: "SSD", c: "--z3", rows: [
+      ["SSD random read (small block)", 100000] ] },
+    { name: "Same datacenter", sub: "Network", c: "--z4", rows: [
+      ["Round trip, small message", 500000] ] },
     { name: "Spinning disk", sub: "HDD", c: "--z5", rows: [
-      ["Disk seek", 10000000], ["Read 1 MB sequentially from disk", 20000000] ] },
+      ["Disk seek", 10000000] ] },
     { name: "Across the ocean", sub: "Intercontinental", c: "--z6", rows: [
-      ["Packet California → Netherlands → California", 150000000] ] }
+      ["Round trip, small message, California → Netherlands → California", 150000000] ] }
+  ];
+  var MB = [
+    { name: "Main memory", sub: "RAM", c: "--z2", rows: [
+      ["Read 1 MB sequentially from memory", 250000] ] },
+    { name: "Flash storage", sub: "SSD", c: "--z3", rows: [
+      ["Read 1 MB sequentially from SSD", 1000000] ] },
+    { name: "Same datacenter", sub: "Network", c: "--z4", rows: [
+      ["Send 1 MB over 1 Gbps (computed)", 8000000] ] },
+    { name: "Spinning disk", sub: "HDD", c: "--z5", rows: [
+      ["Read 1 MB sequentially from disk", 20000000] ] }
   ];
   var KEEP = [
-    ["100 ns", "RAM reference", "--z2"], ["0.5 ms", "datacenter round trip", "--z3"], ["1 ms", "read 1 MB from SSD", "--z4"],
+    ["100 ns", "RAM reference", "--z2"], ["100 µs", "SSD random read", "--z3"], ["0.5 ms", "datacenter round trip", "--z4"],
     ["10 ms", "disk seek", "--z5"], ["150 ms", "across the ocean", "--z6"]
   ];
   var MIN_LOG = -1, DECADES = 10;
+  var TICKS = ["0.1 ns", "1 ns", "10 ns", "100 ns", "1 µs", "10 µs", "100 µs", "1 ms", "10 ms", "100 ms", "1 s"];
 
   function trim(x) { return String(Math.round(x * 10) / 10).replace(/\.0$/, ""); }
   function real(ns) {
@@ -131,28 +144,32 @@
     keep.appendChild(li);
   });
 
-  var chart = document.getElementById("chart");
-  var axis = el("div", "axis"); axis.setAttribute("aria-hidden", "true");
-  var ticks = ["0.1 ns", "1 ns", "10 ns", "100 ns", "1 µs", "10 µs", "100 µs", "1 ms", "10 ms", "100 ms", "1 s"];
-  ticks.forEach(function (t, i) {
-    var s = el("span", i % 2 ? "odd" : "", t); s.style.left = (i * 100 / DECADES) + "%"; axis.appendChild(s);
-  });
-  chart.appendChild(axis);
-
-  ZONES.forEach(function (z) {
-    var sec = el("div", "zone"); sec.style.setProperty("--c", "var(" + z.c + ")");
-    var h = el("h2"); h.appendChild(el("i")); h.appendChild(document.createTextNode(z.name)); h.appendChild(el("small", "", z.sub));
-    sec.appendChild(h);
-    var rows = el("div", "rows");
-    z.rows.forEach(function (r) {
-      var row = el("div", "row"), head = el("div", "head");
-      head.appendChild(el("span", "name", r[0]));
-      head.appendChild(el("span", "real", real(r[1])));
-      head.appendChild(el("span", "human", human(r[1])));
-      var track = el("div", "track"), bar = el("div", "bar");
-      bar.style.width = ((Math.log10(r[1]) - MIN_LOG) / DECADES * 100) + "%";
-      track.appendChild(bar); row.appendChild(head); row.appendChild(track); rows.appendChild(row);
+  function ladder(id, title, blurb, zones) {
+    var root = document.getElementById(id);
+    var header = el("header"); header.appendChild(el("h2", "", title)); header.appendChild(el("p", "", blurb));
+    root.appendChild(header);
+    var axis = el("div", "axis"); axis.setAttribute("aria-hidden", "true");
+    TICKS.forEach(function (t, i) {
+      var s = el("span", i % 2 ? "odd" : "", t); s.style.left = (i * 100 / DECADES) + "%"; axis.appendChild(s);
     });
-    sec.appendChild(rows); chart.appendChild(sec);
-  });
+    root.appendChild(axis);
+    zones.forEach(function (z) {
+      var sec = el("div", "zone"); sec.style.setProperty("--c", "var(" + z.c + ")");
+      var h = el("h3"); h.appendChild(el("i")); h.appendChild(document.createTextNode(z.name)); h.appendChild(el("small", "", z.sub));
+      sec.appendChild(h);
+      var rows = el("div", "rows");
+      z.rows.forEach(function (r) {
+        var row = el("div", "row"), head = el("div", "head");
+        head.appendChild(el("span", "name", r[0]));
+        head.appendChild(el("span", "real", real(r[1])));
+        head.appendChild(el("span", "human", human(r[1])));
+        var track = el("div", "track"), bar = el("div", "bar");
+        bar.style.width = ((Math.log10(r[1]) - MIN_LOG) / DECADES * 100) + "%";
+        track.appendChild(bar); row.appendChild(head); row.appendChild(track); rows.appendChild(row);
+      });
+      sec.appendChild(rows); root.appendChild(sec);
+    });
+  }
+  ladder("small", "One small operation", "How long a single access or message takes, whatever the size. This is the wait before anything happens.", SMALL);
+  ladder("mb", "Moving 1 MB", "How long one megabyte takes once it is flowing. This depends on bandwidth, so it is not comparable to the ladder above.", MB);
 </script>
