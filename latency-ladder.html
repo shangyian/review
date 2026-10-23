@@ -39,6 +39,17 @@
   .dg .t { fill: var(--fg); font: 11px var(--mono); }
   .dg .m { fill: var(--muted); font: 10px var(--mono); }
   .dg .mid { text-anchor: middle; }
+  .dg .tb { fill: var(--fg); font: 600 12px var(--mono); }
+  .layout figure svg { max-height: calc(100vh - 88px); }
+  .dg g[data-part] { transition: opacity 0.25s; }
+  .dg[data-active] g[data-part] { opacity: 0.25; }
+  .dg[data-active="chip"] g[data-part~="chip"],
+  .dg[data-active="ram"] g[data-part~="ram"],
+  .dg[data-active="ssd"] g[data-part~="ssd"],
+  .dg[data-active="net"] g[data-part~="net"],
+  .dg[data-active="hdd"] g[data-part~="hdd"],
+  .dg[data-active="ocean"] g[data-part~="ocean"] { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .dg g[data-part] { transition: none; } }
   h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
   .lede { color: var(--muted); margin: 12px 0 0; max-width: 62ch; }
   .lede b { color: var(--fg); font-weight: 600; }
@@ -90,67 +101,87 @@
 <div class="layout">
   <aside>
     <figure>
-      <svg class="dg" viewBox="0 0 300 646" width="100%" role="img" aria-labelledby="dg-title">
-        <title id="dg-title">A CPU chip with cores, L1, L2 and L3 caches and a memory controller, connected by a memory bus to RAM, and by PCIe or SATA links to an SSD, a network card and a hard disk.</title>
-        <rect x="6" y="6" width="288" height="298" rx="8" fill="none" stroke="var(--z1)" stroke-width="2"/>
-        <text class="t" x="20" y="26">CPU chip (two of many cores)</text>
+      <svg class="dg" viewBox="0 0 300 686" width="100%" role="img" aria-labelledby="dg-title">
+        <title id="dg-title">A CPU chip with cores, L1, L2 and L3 caches and a memory controller, connected by a memory bus to RAM, by PCIe to an SSD and a network card, and by SATA to a hard disk.</title>
 
-        <rect class="box" x="20" y="38" width="120" height="98" rx="4"/>
-        <text class="m mid" x="80" y="54">core 0</text>
-        <rect x="30" y="62" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
-        <text class="t mid" x="80" y="79">L1 · ~1 ns</text>
-        <rect x="30" y="96" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
-        <text class="t mid" x="80" y="113">L2 · ~5 ns</text>
+        <g data-part="chip">
+          <rect x="6" y="6" width="288" height="298" rx="8" fill="none" stroke="var(--z1)" stroke-width="2"/>
+          <text class="t" x="20" y="26">CPU chip (two of many cores)</text>
+          <rect class="box" x="20" y="38" width="120" height="98" rx="4"/>
+          <text class="m mid" x="80" y="54">core 0</text>
+          <rect x="30" y="62" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+          <text class="t mid" x="80" y="79">L1 · ~1 ns</text>
+          <rect x="30" y="96" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+          <text class="t mid" x="80" y="113">L2 · ~5 ns</text>
+          <rect class="box" x="160" y="38" width="120" height="98" rx="4"/>
+          <text class="m mid" x="220" y="54">core 1</text>
+          <rect x="170" y="62" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+          <text class="t mid" x="220" y="79">L1 · ~1 ns</text>
+          <rect x="170" y="96" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+          <text class="t mid" x="220" y="113">L2 · ~5 ns</text>
+          <path class="ln" d="M80 136V158M220 136V158M150 188V204"/>
+          <rect x="20" y="158" width="260" height="30" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
+          <text class="t mid" x="150" y="177">L3, shared · ~10–40 ns</text>
+          <rect class="box" x="20" y="204" width="260" height="28" rx="3"/>
+          <text class="t mid" x="150" y="222">memory controller</text>
+        </g>
 
-        <rect class="box" x="160" y="38" width="120" height="98" rx="4"/>
-        <text class="m mid" x="220" y="54">core 1</text>
-        <rect x="170" y="62" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
-        <text class="t mid" x="220" y="79">L1 · ~1 ns</text>
-        <rect x="170" y="96" width="100" height="26" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
-        <text class="t mid" x="220" y="113">L2 · ~5 ns</text>
+        <g data-part="ram">
+          <path d="M150 232V340" stroke="var(--z2)" stroke-width="3" fill="none"/>
+          <text class="m" x="160" y="326">memory bus</text>
+          <rect x="50" y="340" width="200" height="110" rx="5" fill="none" stroke="var(--z2)" stroke-width="2"/>
+          <text class="tb mid" x="150" y="361">RAM · ~100 ns</text>
+          <rect x="62" y="374" width="40" height="44" rx="2" fill="var(--z2)"/>
+          <rect x="110" y="374" width="40" height="44" rx="2" fill="var(--z2)"/>
+          <rect x="158" y="374" width="40" height="44" rx="2" fill="var(--z2)"/>
+          <rect x="206" y="374" width="32" height="44" rx="2" fill="var(--z2)"/>
+          <text class="m mid" x="150" y="440">gone at power off</text>
+        </g>
 
-        <path class="ln" d="M80 136V158M220 136V158M150 188V204"/>
-        <rect x="20" y="158" width="260" height="30" rx="3" fill="var(--bg)" stroke="var(--z1)"/>
-        <text class="t mid" x="150" y="177">L3, shared · ~10–40 ns</text>
-        <rect class="box" x="20" y="204" width="260" height="28" rx="3"/>
-        <text class="t mid" x="150" y="222">memory controller</text>
+        <g data-part="ssd net">
+          <path d="M30 304V470" stroke="var(--muted)" stroke-width="2.5" fill="none"/>
+          <text class="t" x="36" y="324">PCIe</text>
+        </g>
 
-        <path d="M150 232V340" stroke="var(--z2)" stroke-width="3" fill="none"/>
-        <text class="m" x="160" y="326">memory bus</text>
-        <rect x="80" y="340" width="140" height="84" rx="4" fill="none" stroke="var(--z2)" stroke-width="2"/>
-        <text class="t mid" x="150" y="358">RAM · ~100 ns</text>
-        <rect x="90" y="368" width="36" height="34" rx="2" fill="var(--z2)"/>
-        <rect x="132" y="368" width="36" height="34" rx="2" fill="var(--z2)"/>
-        <rect x="174" y="368" width="36" height="34" rx="2" fill="var(--z2)"/>
-        <text class="m mid" x="150" y="416">gone at power off</text>
+        <g data-part="ssd">
+          <path d="M30 470V490" stroke="var(--z3)" stroke-width="2.5" fill="none"/>
+          <rect x="8" y="490" width="88" height="48" rx="4" fill="var(--bg)" stroke="var(--z3)" stroke-width="2"/>
+          <text class="t mid" x="52" y="510">SSD</text>
+          <text class="m mid" x="52" y="526">~100 µs</text>
+        </g>
 
-        <path class="ln" d="M52 304V450H248M150 450V470M248 450V470M52 450V470"/>
-        <text class="m mid" x="150" y="442">PCIe / SATA links</text>
-        <rect x="10" y="470" width="84" height="44" rx="4" fill="var(--bg)" stroke="var(--z3)" stroke-width="2"/>
-        <text class="t mid" x="52" y="488">SSD</text>
-        <text class="m mid" x="52" y="504">~100 µs</text>
-        <rect x="108" y="470" width="84" height="44" rx="4" fill="var(--bg)" stroke="var(--z4)" stroke-width="2"/>
-        <text class="t mid" x="150" y="488">network</text>
-        <text class="m mid" x="150" y="504">card</text>
-        <rect x="206" y="470" width="84" height="44" rx="4" fill="var(--bg)" stroke="var(--z5)" stroke-width="2"/>
-        <text class="t mid" x="248" y="488">HDD</text>
-        <text class="m mid" x="248" y="504">~10 ms</text>
+        <g data-part="net">
+          <path d="M30 470H150V490" stroke="var(--z4)" stroke-width="2.5" fill="none"/>
+          <rect x="106" y="490" width="88" height="48" rx="4" fill="var(--bg)" stroke="var(--z4)" stroke-width="2"/>
+          <text class="t mid" x="150" y="510">network</text>
+          <text class="m mid" x="150" y="526">card</text>
+          <path d="M150 538V566" stroke="var(--z4)" stroke-width="2.5" fill="none"/>
+          <rect x="40" y="566" width="220" height="44" rx="5" fill="var(--bg)" stroke="var(--z4)" stroke-width="2"/>
+          <text class="tb mid" x="150" y="585">other machines</text>
+          <text class="m mid" x="150" y="601">same datacenter · ~0.5 ms</text>
+        </g>
 
-        <path d="M150 514V548" stroke="var(--z4)" stroke-width="2" fill="none"/>
-        <rect x="65" y="548" width="170" height="34" rx="4" fill="var(--bg)" stroke="var(--z4)" stroke-width="2"/>
-        <text class="t mid" x="150" y="563">other machines</text>
-        <text class="m mid" x="150" y="576">same datacenter ~0.5 ms</text>
-        <path d="M150 582V606" stroke="var(--z6)" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-        <rect x="65" y="606" width="170" height="34" rx="4" fill="var(--bg)" stroke="var(--z6)" stroke-width="2"/>
-        <text class="t mid" x="150" y="621">another continent</text>
-        <text class="m mid" x="150" y="634">round trip ~150 ms</text>
+        <g data-part="hdd">
+          <path d="M278 304V490" stroke="var(--z5)" stroke-width="2.5" stroke-dasharray="6 4" fill="none"/>
+          <text class="t" x="270" y="470" text-anchor="end">SATA</text>
+          <rect x="204" y="490" width="88" height="48" rx="4" fill="var(--bg)" stroke="var(--z5)" stroke-width="2"/>
+          <text class="t mid" x="248" y="510">HDD</text>
+          <text class="m mid" x="248" y="526">~10 ms</text>
+        </g>
+
+        <g data-part="ocean">
+          <path d="M150 610V634" stroke="var(--z6)" stroke-width="2.5" stroke-dasharray="4 3" fill="none"/>
+          <rect x="40" y="634" width="220" height="44" rx="5" fill="var(--bg)" stroke="var(--z6)" stroke-width="2"/>
+          <text class="tb mid" x="150" y="653">another continent</text>
+          <text class="m mid" x="150" y="669">round trip ~150 ms</text>
+        </g>
       </svg>
-      <figcaption>Simplified. Cache sizes and latencies vary by chip. The I/O links are separate in practice.</figcaption>
+      <figcaption>Simplified. Cache sizes and latencies vary by chip. In practice each device has its own link. The part for the layer you are reading stays lit.</figcaption>
     </figure>
   </aside>
   <div class="stack">
 
-  <section class="layer" style="--c: var(--z1)">
+  <section class="layer" data-part="chip" style="--c: var(--z1)">
     <h2><span class="rank">1</span>On the chip <span class="fig">~1 ns</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 10%"></i></div>
     <div class="scale">if 1 ns = 1 sec: about 1 second</div>
@@ -173,7 +204,7 @@
 
   <div class="jump"><span>about <b>100&times;</b> slower</span></div>
 
-  <section class="layer" style="--c: var(--z2)">
+  <section class="layer" data-part="ram" style="--c: var(--z2)">
     <h2><span class="rank">2</span>RAM <span class="fig">~100 ns</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 30%"></i></div>
     <div class="scale">if 1 ns = 1 sec: about 2 minutes</div>
@@ -196,7 +227,7 @@
 
   <div class="jump"><span>about <b>1,000&times;</b> slower</span></div>
 
-  <section class="layer" style="--c: var(--z3)">
+  <section class="layer" data-part="ssd" style="--c: var(--z3)">
     <h2><span class="rank">3</span>SSD (flash) <span class="fig">~100 &micro;s</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 60%"></i></div>
     <div class="scale">if 1 ns = 1 sec: about 1 day</div>
@@ -219,7 +250,7 @@
 
   <div class="jump"><span>about <b>5&times;</b> slower</span></div>
 
-  <section class="layer" style="--c: var(--z4)">
+  <section class="layer" data-part="net" style="--c: var(--z4)">
     <h2><span class="rank">4</span>Same datacenter <span class="fig">~0.5 ms</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 67%"></i></div>
     <div class="scale">if 1 ns = 1 sec: about 6 days</div>
@@ -242,7 +273,7 @@
 
   <div class="jump"><span>about <b>20&times;</b> slower</span></div>
 
-  <section class="layer" style="--c: var(--z5)">
+  <section class="layer" data-part="hdd" style="--c: var(--z5)">
     <h2><span class="rank">5</span>Spinning disk (HDD) <span class="fig">~10 ms</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 80%"></i></div>
     <div class="scale">if 1 ns = 1 sec: about 4 months</div>
@@ -250,7 +281,7 @@
       <div>
         <h3>How it differs</h3>
         <p>A mechanical arm has to move and a platter has to spin to the right spot. Random access is painfully slow, but once the head is in place, sequential reads are fast and the storage is cheap.</p>
-        <p>The cost is in the seek, so one big read beats many small ones.</p>
+        <p>The cost is in the seek, so one big read beats many small ones. HDDs are no longer the default for databases or laptops, but they remain the cheapest way to store large amounts of data.</p>
       </div>
       <div>
         <h3>You land here when</h3>
@@ -265,7 +296,7 @@
 
   <div class="jump"><span>about <b>15&times;</b> slower</span></div>
 
-  <section class="layer" style="--c: var(--z6)">
+  <section class="layer" data-part="ocean" style="--c: var(--z6)">
     <h2><span class="rank">6</span>Across the ocean <span class="fig">~150 ms</span></h2>
     <div class="meter" aria-hidden="true"><i style="width: 92%"></i></div>
     <div class="scale">if 1 ns = 1 sec: about 5 years</div>
@@ -288,6 +319,20 @@
 
   </div>
 </div>
+
+  <script>
+    (function () {
+      var dg = document.querySelector(".dg");
+      var layers = document.querySelectorAll(".layer[data-part]");
+      if (!dg || !("IntersectionObserver" in window)) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) dg.setAttribute("data-active", e.target.getAttribute("data-part"));
+        });
+      }, { rootMargin: "-45% 0px -45% 0px" });
+      layers.forEach(function (l) { io.observe(l); });
+    })();
+  </script>
 
   <p class="note"><b>Reading the numbers:</b> these are for a small access or message. Moving a megabyte or more is limited by bandwidth, so the order can shift. Reading 1 MB from an SSD takes about 1 ms, and sending it over a 1 Gbps link takes about 8 ms. Treat every figure as an order of magnitude.</p>
 </main>
