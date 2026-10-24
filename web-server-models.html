@@ -229,13 +229,21 @@
             <text id="cl9-a" class="m" x="6" y="262"></text>
             <text id="cl9-b" class="m" x="6" y="276"></text>
             <text id="cl9-c" class="m" x="6" y="290"></text>
-            <path class="ln" d="M54 200H64" marker-end="url(#ah)"/>
-            <rect data-part="lb" class="ent" x="66" y="160" width="84" height="80" rx="4" style="--c: var(--hop)"/>
-            <text class="tb" x="108" y="190" text-anchor="middle">nginx</text>
-            <text class="m" x="108" y="206" text-anchor="middle">front door +</text><text class="m" x="108" y="220" text-anchor="middle">load balancer</text>
-            <path class="ln" d="M150 200H162V85H174" marker-end="url(#ah)"/>
-            <path class="ln" d="M150 200H174" marker-end="url(#ah)"/>
-            <path class="ln" d="M150 200H162V345H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M54 200H58V90H64" marker-end="url(#ah)"/>
+            <path class="ln" d="M58 200V330H64" marker-end="url(#ah)"/>
+            <rect data-part="lb" class="ent" x="66" y="60" width="84" height="60" rx="4" style="--c: var(--hop)"/>
+            <text class="tb" x="108" y="82" text-anchor="middle">nginx 1</text>
+            <text class="m" x="108" y="96" text-anchor="middle">front door +</text><text class="m" x="108" y="110" text-anchor="middle">load balancer</text>
+            <rect data-part="lb" class="ent" x="66" y="300" width="84" height="60" rx="4" style="--c: var(--hop)"/>
+            <text class="tb" x="108" y="322" text-anchor="middle">nginx 2</text>
+            <text class="m" x="108" y="336" text-anchor="middle">front door +</text><text class="m" x="108" y="350" text-anchor="middle">load balancer</text>
+            <text class="m" x="6" y="384">a cloud load</text><text class="m" x="6" y="398">balancer picks one</text>
+            <path class="ln" d="M150 80H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M150 90H156V190H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M150 100H160V320H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M150 330H168V100H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M150 340H164V240H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M150 350H174" marker-end="url(#ah)"/>
             <rect class="ent" x="176" y="30" width="164" height="110" rx="4" style="--c: var(--cpu)"/>
             <rect class="ent" x="176" y="160" width="164" height="110" rx="4" style="--c: var(--cpu)"/>
             <rect class="ent" x="176" y="290" width="164" height="110" rx="4" style="--c: var(--cpu)"/>
@@ -403,6 +411,7 @@
         <h2><span class="rank">9</span>Putting it together</h2>
         <div class="blk"><h3>A typical Python setup</h3>
           <p>nginx sits in front and gunicorn runs your code. nginx handles the secure handshake and slow clients, and it can also act as the load balancer. You list several gunicorn instances in an <code>upstream</code> block, and nginx spreads the requests across them. Round-robin is the default, and least-connected and IP hash are among the other methods. <a class="src" href="https://nginx.org/en/docs/http/load_balancing.html" target="_blank" rel="noopener">source</a> The instances can run on one machine or on several, and each has its own accept queue and workers.</p>
+          <p>One nginx would be a single machine that can fail, so you run two or more. Something in front spreads clients across them: usually a cloud load balancer, which is a managed service the cloud provider runs on its own machines, not an nginx you operate. Other options are DNS with several addresses, or two nginx machines sharing one floating IP.</p>
           <p>Inside each instance you pick the worker model that fits your code. gunicorn's docs suggest sync for a simple app behind nginx, gthread when you need keep-alive or moderate concurrency, and gevent or an ASGI worker for WebSockets, streaming or async frameworks. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></p>
           <p>There are separate connections. The client connects to nginx: the operating system completes the TCP handshake, and then nginx does the TLS handshake. nginx then opens its own connections to the gunicorn instances. On the same machine that can be a Unix domain socket, a link between two programs addressed by a file path, which needs no TCP handshake. To an instance on another machine it is an ordinary TCP connection.</p></div>
         <div class="blk"><h3>What stays true in every model</h3>
