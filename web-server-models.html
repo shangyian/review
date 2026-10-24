@@ -56,16 +56,12 @@
   .ws rect.hl { fill: var(--track); stroke-width: 3; }
   .ws .view { display: none; }
   .ws .view.on { display: inline; }
+  .ws .view9 { display: none; }
+  .ws .view9.on { display: inline; }
+  .ws rect.cd { fill: var(--hop); }
+  .ws rect.cd.over { fill: var(--ocean); }
   #stack-ui { padding: 10px 12px; background: var(--track); border-radius: 4px; display: flex; flex-direction: column; gap: 6px; }
-  #stack-ui[hidden], #calc-ui[hidden] { display: none; }
-  #calc-ui { padding: 10px 12px; background: var(--track); border-radius: 4px; display: flex; flex-direction: column; gap: 8px; }
-  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
-  .calc-grid label { display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; color: var(--muted); }
-  .calc-grid input { font: inherit; font-size: 0.9375rem; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--fg); width: 100%; box-sizing: border-box; }
-  .calc-grid input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
-  #calc-note { margin: 0; font-size: 0.8125rem; color: var(--muted); }
-  .ws .big { fill: var(--fg); font: 600 22px var(--mono); }
-  .ws rect.over { fill: var(--ocean); }
+  #stack-ui[hidden] { display: none; }
   .stack-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   #stack-ui .note { margin: 0; font-size: 0.8125rem; }
   .picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
@@ -118,22 +114,6 @@
             <button type="button" data-stack="node" aria-pressed="false">Node</button>
           </div>
           <p id="stack-note" class="note"></p>
-        </div>
-        <div id="calc-ui" hidden>
-          <div class="stack-label">Try the numbers</div>
-          <div class="picker" id="presets" role="group" aria-label="Start from a stack">
-            <button type="button" data-preset="py" aria-pressed="true">Python</button>
-            <button type="button" data-preset="java" aria-pressed="false">Java</button>
-            <button type="button" data-preset="go" aria-pressed="false">Go</button>
-            <button type="button" data-preset="node" aria-pressed="false">Node</button>
-          </div>
-          <div class="calc-grid">
-            <label for="c-inst">Instances<input id="c-inst" type="number" min="0" value="3"></label>
-            <label for="c-proc">Processes per instance<input id="c-proc" type="number" min="0" value="9"></label>
-            <label for="c-pool">Pool size per process<input id="c-pool" type="number" min="0" value="5"></label>
-            <label for="c-limit">Database limit<input id="c-limit" type="number" min="1" value="100"></label>
-          </div>
-          <p id="calc-note"></p>
         </div>
         <svg class="ws" id="ws" viewBox="0 0 520 480" role="img" aria-labelledby="ws-title">
           <title id="ws-title">A web server stack: clients, an optional front door, then an application server with a listener and accept queue, workers, your code, and a database. The workers are drawn differently for each model: pre-fork processes, a thread pool, an event loop, or lightweight threads.</title>
@@ -242,67 +222,46 @@
             <rect class="ent" x="10" y="296" width="500" height="70" rx="4" style="--c: var(--cpu)"/>
             <text class="tb" x="24" y="324">Go</text><text class="m" x="24" y="344">no await: goroutines on a scheduler</text>
           </g>
-          <g data-s="9">
-            <circle class="cl" cx="22" cy="160" r="6"/><circle class="cl" cx="22" cy="180" r="6"/><circle class="cl" cx="22" cy="200" r="6"/><circle class="cl" cx="22" cy="220" r="6"/><circle class="cl" cx="22" cy="240" r="6"/>
+          <g data-s="9 10">
             <text class="m" x="6" y="138">clients</text>
+            <circle class="cl" cx="22" cy="160" r="6"/><circle class="cl" cx="22" cy="180" r="6"/><circle class="cl" cx="22" cy="200" r="6"/><circle class="cl" cx="22" cy="220" r="6"/><circle class="cl" cx="22" cy="240" r="6"/>
             <path class="ln" d="M30 160H44M30 180H44M30 200H44M30 220H44M30 240H44M44 160V240"/>
-            <path class="ln" d="M44 200H70" marker-end="url(#ah)"/>
-            <rect data-part="lb" class="ent" x="72" y="160" width="100" height="80" rx="4" style="--c: var(--hop)"/>
-            <text class="tb" x="122" y="190" text-anchor="middle">nginx</text>
-            <text class="m" x="122" y="206" text-anchor="middle">front door and</text><text class="m" x="122" y="220" text-anchor="middle">load balancer</text>
-            <text class="m" x="72" y="260">round-robin by default</text>
-            <path class="ln" d="M172 200H200V90H228" marker-end="url(#ah)"/>
-            <path class="ln" d="M172 200H228" marker-end="url(#ah)"/>
-            <path class="ln" d="M172 200H200V350H228" marker-end="url(#ah)"/>
-            <rect class="ent" x="230" y="40" width="170" height="100" rx="4" style="--c: var(--cpu)"/>
-            <text class="tb" x="240" y="60">gunicorn instance 1</text>
-            <rect class="q" x="242" y="74" width="10" height="16" rx="2"/><rect class="q" x="256" y="74" width="10" height="16" rx="2"/><rect class="q" x="270" y="74" width="10" height="16" rx="2"/>
-            <path class="ln" d="M284 82H300" marker-end="url(#ah)"/>
-            <rect class="ent" x="304" y="72" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="334" y="72" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="364" y="72" width="26" height="20" rx="3" style="--c: var(--cpu)"/>
-            <text class="m" x="242" y="110">accept queue</text><text class="m" x="304" y="110">workers</text>
-            <rect class="ent" x="230" y="170" width="170" height="100" rx="4" style="--c: var(--cpu)"/>
-            <text class="tb" x="240" y="190">gunicorn instance 2</text>
-            <rect class="q" x="242" y="204" width="10" height="16" rx="2"/><rect class="q" x="256" y="204" width="10" height="16" rx="2"/><rect class="q" x="270" y="204" width="10" height="16" rx="2"/>
-            <path class="ln" d="M284 212H300" marker-end="url(#ah)"/>
-            <rect class="ent" x="304" y="202" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="334" y="202" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="364" y="202" width="26" height="20" rx="3" style="--c: var(--cpu)"/>
-            <text class="m" x="242" y="240">accept queue</text><text class="m" x="304" y="240">workers</text>
-            <rect class="ent" x="230" y="300" width="170" height="100" rx="4" style="--c: var(--cpu)"/>
-            <text class="tb" x="240" y="320">gunicorn instance 3</text>
-            <rect class="q" x="242" y="334" width="10" height="16" rx="2"/><rect class="q" x="256" y="334" width="10" height="16" rx="2"/><rect class="q" x="270" y="334" width="10" height="16" rx="2"/>
-            <path class="ln" d="M284 342H300" marker-end="url(#ah)"/>
-            <rect class="ent" x="304" y="332" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="334" y="332" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="364" y="332" width="26" height="20" rx="3" style="--c: var(--cpu)"/>
-            <text class="m" x="242" y="370">accept queue</text><text class="m" x="304" y="370">workers</text>
-            <rect class="ent" x="430" y="150" width="80" height="140" rx="4" style="--c: var(--ssd)"/>
-            <text class="tb" x="470" y="214" text-anchor="middle">database</text>
-            <text class="m" x="470" y="230" text-anchor="middle">shared</text>
-            <path class="ln" d="M400 90H415V170H428" marker-end="url(#ah)"/>
-            <path class="ln" d="M400 220H428" marker-end="url(#ah)"/>
-            <path class="ln" d="M400 350H415V270H428" marker-end="url(#ah)"/>
-            <text class="m" x="10" y="428">connections = instances x workers x pool size</text>
-            <text class="m" x="10" y="446">The instances can run on one machine or several.</text>
-          </g>
-        <g data-s="10">
-            <text class="tb" x="10" y="28">database connections</text>
-            <rect class="ent" x="10" y="50" width="100" height="76" rx="4" style="--c: var(--cpu)"/>
-            <text class="m" x="60" y="70" text-anchor="middle">instances</text><text id="v-inst" class="big" x="60" y="108" text-anchor="middle">3</text>
-            <text class="tb" x="128" y="96" text-anchor="middle">x</text>
-            <rect class="ent" x="146" y="50" width="100" height="76" rx="4" style="--c: var(--cpu)"/>
-            <text class="m" x="196" y="70" text-anchor="middle">processes each</text><text id="v-proc" class="big" x="196" y="108" text-anchor="middle">9</text>
-            <text class="tb" x="264" y="96" text-anchor="middle">x</text>
-            <rect class="ent" x="282" y="50" width="100" height="76" rx="4" style="--c: var(--cpu)"/>
-            <text class="m" x="332" y="70" text-anchor="middle">pool each</text><text id="v-pool" class="big" x="332" y="108" text-anchor="middle">5</text>
-            <text class="tb" x="400" y="96" text-anchor="middle">=</text>
-            <rect class="ent" x="418" y="50" width="92" height="76" rx="4" style="--c: var(--ssd)"/>
-            <text class="m" x="464" y="70" text-anchor="middle">connections</text><text id="v-total" class="big" x="464" y="108" text-anchor="middle">135</text>
-            <text class="m" x="10" y="168">what the database sees, against its limit</text>
-            <rect x="10" y="180" width="500" height="28" rx="3" fill="var(--track)"/>
-            <rect id="bar-fill" x="10" y="180" width="338" height="28" rx="3" fill="var(--hop)"/>
-            <path id="limit-line" d="M260 172V216" stroke="var(--fg)" stroke-width="2" fill="none"/>
-            <text id="limit-label" class="tb" x="260" y="236" text-anchor="middle">limit 100</text>
-            <text id="bar-note" class="m" x="10" y="270">135 connections, 35 over the limit</text>
-            <text class="m" x="10" y="310">The bar runs from 0 to twice the limit.</text>
-            <text class="m" x="10" y="326">Over the limit, new connections can't be opened,</text>
-            <text class="m" x="10" y="342">so some requests wait or fail.</text>
+            <path class="ln" d="M44 200H64" marker-end="url(#ah)"/>
+            <rect data-part="lb" class="ent" x="66" y="160" width="84" height="80" rx="4" style="--c: var(--hop)"/>
+            <text class="tb" x="108" y="190" text-anchor="middle">nginx</text>
+            <text class="m" x="108" y="206" text-anchor="middle">front door +</text><text class="m" x="108" y="220" text-anchor="middle">load balancer</text>
+            <path class="ln" d="M150 200H162V85H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M150 200H174" marker-end="url(#ah)"/>
+            <path class="ln" d="M150 200H162V345H174" marker-end="url(#ah)"/>
+            <rect class="ent" x="176" y="30" width="164" height="110" rx="4" style="--c: var(--cpu)"/>
+            <rect class="ent" x="176" y="160" width="164" height="110" rx="4" style="--c: var(--cpu)"/>
+            <rect class="ent" x="176" y="290" width="164" height="110" rx="4" style="--c: var(--cpu)"/>
+            <g class="view9" data-view9="py-sync"><text class="tb" x="186" y="50">gunicorn instance 1</text><rect class="ent" x="186" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="108">9 processes</text><text class="m" x="186" y="124">pool of 5 each</text></g>
+            <g class="view9" data-view9="py-async"><text class="tb" x="186" y="50">gunicorn instance 1</text><rect class="ent" x="186" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="108">4 event-loop processes</text><text class="m" x="186" y="124">pool of 5 each</text></g>
+            <g class="view9" data-view9="java"><text class="tb" x="186" y="50">Tomcat instance 1</text><rect class="ent" x="186" y="64" width="100" height="26" rx="3" style="--c: var(--cpu)"/><rect class="dot" x="194" y="71" width="11" height="12" rx="2"/><rect class="dot" x="209" y="71" width="11" height="12" rx="2"/><rect class="dot" x="224" y="71" width="11" height="12" rx="2"/><rect class="dot" x="239" y="71" width="11" height="12" rx="2"/><rect class="dot" x="254" y="71" width="11" height="12" rx="2"/><rect class="dot" x="269" y="71" width="11" height="12" rx="2"/><rect class="ent" x="294" y="64" width="36" height="26" rx="3" style="--c: var(--ssd)"/><text class="m" x="312" y="81" text-anchor="middle">pool</text><text class="m" x="186" y="108">1 process, shared pool</text><text class="m" x="186" y="124">pool of 10</text></g>
+            <g class="view9" data-view9="go"><text class="tb" x="186" y="50">Go instance 1</text><rect class="ent" x="186" y="64" width="100" height="26" rx="3" style="--c: var(--cpu)"/><rect class="dot" x="192" y="68" width="6" height="6" rx="1"/><rect class="dot" x="201" y="68" width="6" height="6" rx="1"/><rect class="dot" x="210" y="68" width="6" height="6" rx="1"/><rect class="dot" x="219" y="68" width="6" height="6" rx="1"/><rect class="dot" x="228" y="68" width="6" height="6" rx="1"/><rect class="dot" x="237" y="68" width="6" height="6" rx="1"/><rect class="dot" x="246" y="68" width="6" height="6" rx="1"/><rect class="dot" x="255" y="68" width="6" height="6" rx="1"/><rect class="dot" x="264" y="68" width="6" height="6" rx="1"/><rect class="dot" x="273" y="68" width="6" height="6" rx="1"/><rect class="dot" x="192" y="77" width="6" height="6" rx="1"/><rect class="dot" x="201" y="77" width="6" height="6" rx="1"/><rect class="dot" x="210" y="77" width="6" height="6" rx="1"/><rect class="dot" x="219" y="77" width="6" height="6" rx="1"/><rect class="dot" x="228" y="77" width="6" height="6" rx="1"/><rect class="dot" x="237" y="77" width="6" height="6" rx="1"/><rect class="dot" x="246" y="77" width="6" height="6" rx="1"/><rect class="dot" x="255" y="77" width="6" height="6" rx="1"/><rect class="dot" x="264" y="77" width="6" height="6" rx="1"/><rect class="dot" x="273" y="77" width="6" height="6" rx="1"/><rect class="ent" x="294" y="64" width="36" height="26" rx="3" style="--c: var(--ssd)"/><text class="m" x="312" y="81" text-anchor="middle">pool</text><text class="m" x="186" y="108">1 process, goroutines</text><text class="m" x="186" y="124">pool you set: 10</text></g>
+            <g class="view9" data-view9="node"><text class="tb" x="186" y="50">Node instance 1</text><rect class="ent" x="186" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="64" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="108">4 cluster processes</text><text class="m" x="186" y="124">pool of 10 each</text></g>
+            <g class="view9" data-view9="py-sync"><text class="tb" x="186" y="180">gunicorn instance 2</text><rect class="ent" x="186" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="238">9 processes</text><text class="m" x="186" y="254">pool of 5 each</text></g>
+            <g class="view9" data-view9="py-async"><text class="tb" x="186" y="180">gunicorn instance 2</text><rect class="ent" x="186" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="238">4 event-loop processes</text><text class="m" x="186" y="254">pool of 5 each</text></g>
+            <g class="view9" data-view9="java"><text class="tb" x="186" y="180">Tomcat instance 2</text><rect class="ent" x="186" y="194" width="100" height="26" rx="3" style="--c: var(--cpu)"/><rect class="dot" x="194" y="201" width="11" height="12" rx="2"/><rect class="dot" x="209" y="201" width="11" height="12" rx="2"/><rect class="dot" x="224" y="201" width="11" height="12" rx="2"/><rect class="dot" x="239" y="201" width="11" height="12" rx="2"/><rect class="dot" x="254" y="201" width="11" height="12" rx="2"/><rect class="dot" x="269" y="201" width="11" height="12" rx="2"/><rect class="ent" x="294" y="194" width="36" height="26" rx="3" style="--c: var(--ssd)"/><text class="m" x="312" y="211" text-anchor="middle">pool</text><text class="m" x="186" y="238">1 process, shared pool</text><text class="m" x="186" y="254">pool of 10</text></g>
+            <g class="view9" data-view9="go"><text class="tb" x="186" y="180">Go instance 2</text><rect class="ent" x="186" y="194" width="100" height="26" rx="3" style="--c: var(--cpu)"/><rect class="dot" x="192" y="198" width="6" height="6" rx="1"/><rect class="dot" x="201" y="198" width="6" height="6" rx="1"/><rect class="dot" x="210" y="198" width="6" height="6" rx="1"/><rect class="dot" x="219" y="198" width="6" height="6" rx="1"/><rect class="dot" x="228" y="198" width="6" height="6" rx="1"/><rect class="dot" x="237" y="198" width="6" height="6" rx="1"/><rect class="dot" x="246" y="198" width="6" height="6" rx="1"/><rect class="dot" x="255" y="198" width="6" height="6" rx="1"/><rect class="dot" x="264" y="198" width="6" height="6" rx="1"/><rect class="dot" x="273" y="198" width="6" height="6" rx="1"/><rect class="dot" x="192" y="207" width="6" height="6" rx="1"/><rect class="dot" x="201" y="207" width="6" height="6" rx="1"/><rect class="dot" x="210" y="207" width="6" height="6" rx="1"/><rect class="dot" x="219" y="207" width="6" height="6" rx="1"/><rect class="dot" x="228" y="207" width="6" height="6" rx="1"/><rect class="dot" x="237" y="207" width="6" height="6" rx="1"/><rect class="dot" x="246" y="207" width="6" height="6" rx="1"/><rect class="dot" x="255" y="207" width="6" height="6" rx="1"/><rect class="dot" x="264" y="207" width="6" height="6" rx="1"/><rect class="dot" x="273" y="207" width="6" height="6" rx="1"/><rect class="ent" x="294" y="194" width="36" height="26" rx="3" style="--c: var(--ssd)"/><text class="m" x="312" y="211" text-anchor="middle">pool</text><text class="m" x="186" y="238">1 process, goroutines</text><text class="m" x="186" y="254">pool you set: 10</text></g>
+            <g class="view9" data-view9="node"><text class="tb" x="186" y="180">Node instance 2</text><rect class="ent" x="186" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="194" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="238">4 cluster processes</text><text class="m" x="186" y="254">pool of 10 each</text></g>
+            <g class="view9" data-view9="py-sync"><text class="tb" x="186" y="310">gunicorn instance 3</text><rect class="ent" x="186" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="368">9 processes</text><text class="m" x="186" y="384">pool of 5 each</text></g>
+            <g class="view9" data-view9="py-async"><text class="tb" x="186" y="310">gunicorn instance 3</text><rect class="ent" x="186" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="368">4 event-loop processes</text><text class="m" x="186" y="384">pool of 5 each</text></g>
+            <g class="view9" data-view9="java"><text class="tb" x="186" y="310">Tomcat instance 3</text><rect class="ent" x="186" y="324" width="100" height="26" rx="3" style="--c: var(--cpu)"/><rect class="dot" x="194" y="331" width="11" height="12" rx="2"/><rect class="dot" x="209" y="331" width="11" height="12" rx="2"/><rect class="dot" x="224" y="331" width="11" height="12" rx="2"/><rect class="dot" x="239" y="331" width="11" height="12" rx="2"/><rect class="dot" x="254" y="331" width="11" height="12" rx="2"/><rect class="dot" x="269" y="331" width="11" height="12" rx="2"/><rect class="ent" x="294" y="324" width="36" height="26" rx="3" style="--c: var(--ssd)"/><text class="m" x="312" y="341" text-anchor="middle">pool</text><text class="m" x="186" y="368">1 process, shared pool</text><text class="m" x="186" y="384">pool of 10</text></g>
+            <g class="view9" data-view9="go"><text class="tb" x="186" y="310">Go instance 3</text><rect class="ent" x="186" y="324" width="100" height="26" rx="3" style="--c: var(--cpu)"/><rect class="dot" x="192" y="328" width="6" height="6" rx="1"/><rect class="dot" x="201" y="328" width="6" height="6" rx="1"/><rect class="dot" x="210" y="328" width="6" height="6" rx="1"/><rect class="dot" x="219" y="328" width="6" height="6" rx="1"/><rect class="dot" x="228" y="328" width="6" height="6" rx="1"/><rect class="dot" x="237" y="328" width="6" height="6" rx="1"/><rect class="dot" x="246" y="328" width="6" height="6" rx="1"/><rect class="dot" x="255" y="328" width="6" height="6" rx="1"/><rect class="dot" x="264" y="328" width="6" height="6" rx="1"/><rect class="dot" x="273" y="328" width="6" height="6" rx="1"/><rect class="dot" x="192" y="337" width="6" height="6" rx="1"/><rect class="dot" x="201" y="337" width="6" height="6" rx="1"/><rect class="dot" x="210" y="337" width="6" height="6" rx="1"/><rect class="dot" x="219" y="337" width="6" height="6" rx="1"/><rect class="dot" x="228" y="337" width="6" height="6" rx="1"/><rect class="dot" x="237" y="337" width="6" height="6" rx="1"/><rect class="dot" x="246" y="337" width="6" height="6" rx="1"/><rect class="dot" x="255" y="337" width="6" height="6" rx="1"/><rect class="dot" x="264" y="337" width="6" height="6" rx="1"/><rect class="dot" x="273" y="337" width="6" height="6" rx="1"/><rect class="ent" x="294" y="324" width="36" height="26" rx="3" style="--c: var(--ssd)"/><text class="m" x="312" y="341" text-anchor="middle">pool</text><text class="m" x="186" y="368">1 process, goroutines</text><text class="m" x="186" y="384">pool you set: 10</text></g>
+            <g class="view9" data-view9="node"><text class="tb" x="186" y="310">Node instance 3</text><rect class="ent" x="186" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="222" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="258" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="294" y="324" width="28" height="22" rx="3" style="--c: var(--cpu)"/><text class="m" x="186" y="368">4 cluster processes</text><text class="m" x="186" y="384">pool of 10 each</text></g>
+            <path class="ln" d="M340 85H350V150H358" marker-end="url(#ah)"/>
+            <path class="ln" d="M340 215H358" marker-end="url(#ah)"/>
+            <path class="ln" d="M340 345H350V270H358" marker-end="url(#ah)"/>
+            <rect data-part="db9" class="ent" x="360" y="100" width="150" height="200" rx="4" style="--c: var(--ssd)"/>
+            <text class="tb" x="435" y="120" text-anchor="middle">database</text>
+            <text class="m" x="435" y="134" text-anchor="middle">one dot per connection</text>
+            <g id="conn-dots"></g>
+            <text id="db-total" class="tb" x="435" y="278" text-anchor="middle">135 connections</text>
+            <text id="db-limit" class="m" x="435" y="292" text-anchor="middle">limit 100</text>
+            <text class="m" x="10" y="428">connections = instances x processes x pool size</text>
+            <text class="m" x="10" y="446">Illustrative numbers. Dark dots are past the limit.</text>
           </g>
         </svg>
         <figcaption>One drawing for the whole page. The part you are reading about is outlined, and the workers change to match the model.</figcaption>
@@ -456,7 +415,7 @@
         <h2><span class="rank">10</span>How many database connections do you really use?</h2>
         <div class="blk"><h3>The arithmetic</h3>
           <p>The database sees instances × processes per instance × pool size per process. Each process holds its own pool, so the number multiplies quickly, and it is easy to pass the database's limit without noticing. Postgres, for example, defaults to about 100. <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a></p>
-          <p>Use the numbers under the diagram. The preset buttons fill in a typical setup for each stack.</p></div>
+          <p>Use the buttons above the diagram to switch stacks and watch how many connections reach the database. Each dot is one connection.</p></div>
         <div class="blk"><h3>Where the numbers come from</h3>
           <ul>
             <li><b>Python:</b> gunicorn suggests starting with (2 × cores) + 1 workers, which is 9 on four cores. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a> SQLAlchemy's default pool keeps 5 connections and allows 10 more under load, so up to 15 per process. The pool belongs to the engine, and connections are not shared with a forked process, so every worker has its own. <a class="src" href="https://docs.sqlalchemy.org/en/20/core/pooling.html" target="_blank" rel="noopener">source</a></li>
@@ -522,8 +481,15 @@
       "node": { fd: "nginx", opt: true, as: "Node", code: "Express app",
         note: "One program plays every role, and cluster mode adds processes. Express is a web framework for Node. <a class=\"src\" href=\"https://expressjs.com/\" target=\"_blank\" rel=\"noopener\">source</a>" }
     };
+    var CONN = {
+      "py-sync":  { inst: 3, proc: 9, pool: 5,  limit: 100, note: "Illustrative: 3 instances x 9 workers x a pool of 5 = 135. gunicorn suggests (2 x cores) + 1 workers, and SQLAlchemy's default pool keeps 5 connections per process. <a class=\"src\" href=\"https://docs.sqlalchemy.org/en/20/core/pooling.html\" target=\"_blank\" rel=\"noopener\">source</a>" },
+      "py-async": { inst: 3, proc: 4, pool: 5,  limit: 100, note: "Illustrative: 3 instances x 4 event-loop workers x a pool of 5 = 60. The worker count is your choice. SQLAlchemy's default pool keeps 5 per process. <a class=\"src\" href=\"https://docs.sqlalchemy.org/en/20/core/pooling.html\" target=\"_blank\" rel=\"noopener\">source</a>" },
+      "java":     { inst: 3, proc: 1, pool: 10, limit: 100, note: "Illustrative: 3 instances x 1 process x a pool of 10 = 30. HikariCP's default maximum pool size is 10, shared by the process's threads. <a class=\"src\" href=\"https://github.com/brettwooldridge/HikariCP\" target=\"_blank\" rel=\"noopener\">source</a>" },
+      "go":       { inst: 3, proc: 1, pool: 10, limit: 100, note: "Illustrative: 3 instances x 1 process x a pool of 10 = 30. Go's database/sql has no default limit, so 10 is a number you would choose. <a class=\"src\" href=\"https://pkg.go.dev/database/sql#DB.SetMaxOpenConns\" target=\"_blank\" rel=\"noopener\">source</a>" },
+      "node":     { inst: 3, proc: 4, pool: 10, limit: 100, note: "Illustrative: 3 instances x 4 cluster workers x a pool of 10 = 120. The node-postgres default pool is 10 per process. <a class=\"src\" href=\"https://node-postgres.com/apis/pool\" target=\"_blank\" rel=\"noopener\">source</a>" }
+    };
     var FORCED = { "1": "py-sync", "3": "py-sync", "4": "py-sync", "5": "java", "6": "node", "7": "go" };
-    var HL = { "1": ["queue"], "3": ["workers"], "4": ["workers"], "5": ["workers"], "6": ["workers"], "7": ["workers"], "9": ["lb"] };
+    var HL = { "1": ["queue"], "3": ["workers"], "4": ["workers"], "5": ["workers"], "6": ["workers"], "7": ["workers"], "9": ["lb"], "10": ["db9"] };
     var pick = "py-sync", current = 1;
 
     function mk(tag, attrs, parent, text) {
@@ -543,6 +509,21 @@
       mk("rect", { "class": "dot", x: 236 + gc * 18, y: 178 + gr * 24, width: 12, height: 12, rx: 2 }, gd);
     }
 
+    function apply9(k) {
+      var d = CONN[k]; if (!d) return;
+      var total = d.inst * d.proc * d.pool;
+      document.querySelectorAll(".ws g.view9").forEach(function (g) { g.classList.toggle("on", g.getAttribute("data-view9") === k); });
+      var g = document.getElementById("conn-dots");
+      if (g) {
+        while (g.firstChild) g.removeChild(g.firstChild);
+        var shown = Math.min(total, 156);
+        for (var i = 0; i < shown; i++) {
+          mk("rect", { "class": "cd" + (i >= d.limit ? " over" : ""), x: 370 + (i % 13) * 10, y: 146 + Math.floor(i / 13) * 10, width: 8, height: 8, rx: 1 }, g);
+        }
+      }
+      var t1 = document.getElementById("db-total"); if (t1) t1.textContent = total + " connections";
+      var t2 = document.getElementById("db-limit"); if (t2) t2.textContent = total > d.limit ? (total - d.limit) + " over the limit of " + d.limit : "limit " + d.limit;
+    }
     function applyStack(k) {
       var d = STACKS[k]; if (!d) return;
       function t(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
@@ -553,56 +534,28 @@
     }
     function setPick(k) {
       pick = k;
-      var n = document.getElementById("stack-note"); if (n) n.innerHTML = STACKS[k].note;
+      var n = document.getElementById("stack-note"); if (n) n.innerHTML = current >= 9 ? CONN[k].note : STACKS[k].note;
       document.querySelectorAll("#picker button").forEach(function (b) {
         b.setAttribute("aria-pressed", String(b.getAttribute("data-stack") === k));
       });
       if (current === 2) applyStack(k);
+      if (current >= 9) apply9(k);
     }
     function show(n) {
       n = String(n); current = Number(n);
-      if (ui) ui.hidden = n !== "2";
-      var cui = document.getElementById("calc-ui"); if (cui) cui.hidden = n !== "10";
+      if (ui) ui.hidden = ["2", "9", "10"].indexOf(n) === -1;
       groups.forEach(function (g) {
         g.classList.toggle("show", g.getAttribute("data-s").split(" ").indexOf(n) > -1);
       });
       applyStack(n === "2" ? pick : (FORCED[n] || pick));
+      if (current >= 9) { apply9(pick); var nn = document.getElementById("stack-note"); if (nn) nn.innerHTML = CONN[pick].note; }
+      else { var n2 = document.getElementById("stack-note"); if (n2) n2.innerHTML = STACKS[pick].note; }
       var hl = HL[n] || [];
       document.querySelectorAll(".ws [data-part]").forEach(function (e) {
         e.classList.toggle("hl", hl.indexOf(e.getAttribute("data-part")) > -1);
       });
     }
 
-
-    var PRESETS = {
-      py:   { inst: 3, proc: 9, pool: 5,  limit: 100, note: "gunicorn on four cores: (2 x 4) + 1 = 9 workers. SQLAlchemy default pool: 5, up to 15 with overflow." },
-      java: { inst: 3, proc: 1, pool: 10, limit: 100, note: "One JVM per instance. HikariCP default maximum pool size: 10." },
-      go:   { inst: 3, proc: 1, pool: 10, limit: 100, note: "One process per instance. Go has no default limit, so 10 is a chosen number." },
-      node: { inst: 3, proc: 4, pool: 10, limit: 100, note: "Four cluster workers per instance. node-postgres default pool: 10." }
-    };
-    function num(id) { var e = document.getElementById(id); var v = e ? parseInt(e.value, 10) : 0; return isNaN(v) || v < 0 ? 0 : v; }
-    function calc() {
-      var inst = num("c-inst"), proc = num("c-proc"), pool = num("c-pool"), limit = Math.max(num("c-limit"), 1);
-      var total = inst * proc * pool;
-      function t(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
-      t("v-inst", inst); t("v-proc", proc); t("v-pool", pool); t("v-total", total); t("limit-label", "limit " + limit);
-      var w = Math.min(total / (2 * limit), 1) * 500;
-      var f = document.getElementById("bar-fill");
-      if (f) { f.setAttribute("width", w); f.setAttribute("fill", total > limit ? "var(--ocean)" : "var(--hop)"); }
-      t("bar-note", total > limit ? total + " connections, " + (total - limit) + " over the limit" : total + " of " + limit + " connections, " + (limit - total) + " to spare");
-    }
-    function setPreset(k) {
-      var d = PRESETS[k]; if (!d) return;
-      document.getElementById("c-inst").value = d.inst; document.getElementById("c-proc").value = d.proc;
-      document.getElementById("c-pool").value = d.pool; document.getElementById("c-limit").value = d.limit;
-      var n = document.getElementById("calc-note"); if (n) n.textContent = d.note;
-      document.querySelectorAll("#presets button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-preset") === k)); });
-      calc();
-    }
-    var presets = document.getElementById("presets");
-    if (presets) presets.addEventListener("click", function (e) { var b = e.target.closest("button[data-preset]"); if (b) setPreset(b.getAttribute("data-preset")); });
-    ["c-inst", "c-proc", "c-pool", "c-limit"].forEach(function (id) { var e = document.getElementById(id); if (e) e.addEventListener("input", calc); });
-    setPreset("py");
 
     var picker = document.getElementById("picker");
     if (picker) picker.addEventListener("click", function (e) {
