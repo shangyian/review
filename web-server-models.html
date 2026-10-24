@@ -120,7 +120,7 @@
           </defs>
 
           <!-- the same shape, relabeled and redrawn per stack (screen 2) -->
-          <g data-s="1 2 3 4 5 6 7 9">
+          <g data-s="1 2 3 4 5 6 7">
             <text class="m" x="6" y="28">clients</text>
             <circle class="cl" cx="22" cy="70" r="6"/><circle class="cl" cx="22" cy="90" r="6"/><circle class="cl" cx="22" cy="110" r="6"/><circle class="cl" cx="22" cy="130" r="6"/><circle class="cl" cx="22" cy="150" r="6"/>
             <path class="ln" d="M30 70H44M30 90H44M30 110H44M30 130H44M30 150H44M44 70V150"/>
@@ -219,11 +219,43 @@
             <text class="tb" x="24" y="324">Go</text><text class="m" x="24" y="344">no await: goroutines on a scheduler</text>
           </g>
           <g data-s="9">
-            <text class="m" x="72" y="170">connection 1:</text>
-            <text class="m" x="72" y="184">clients to nginx</text>
-            <text class="m" x="72" y="208">connection 2:</text>
-            <text class="m" x="72" y="222">nginx to gunicorn,</text>
-            <text class="m" x="72" y="236">often a Unix socket</text>
+            <circle class="cl" cx="22" cy="160" r="6"/><circle class="cl" cx="22" cy="180" r="6"/><circle class="cl" cx="22" cy="200" r="6"/><circle class="cl" cx="22" cy="220" r="6"/><circle class="cl" cx="22" cy="240" r="6"/>
+            <text class="m" x="6" y="138">clients</text>
+            <path class="ln" d="M30 160H44M30 180H44M30 200H44M30 220H44M30 240H44M44 160V240"/>
+            <path class="ln" d="M44 200H70" marker-end="url(#ah)"/>
+            <rect data-part="lb" class="ent" x="72" y="160" width="100" height="80" rx="4" style="--c: var(--hop)"/>
+            <text class="tb" x="122" y="190" text-anchor="middle">nginx</text>
+            <text class="m" x="122" y="206" text-anchor="middle">front door and</text><text class="m" x="122" y="220" text-anchor="middle">load balancer</text>
+            <text class="m" x="72" y="260">round-robin by default</text>
+            <path class="ln" d="M172 200H200V90H228" marker-end="url(#ah)"/>
+            <path class="ln" d="M172 200H228" marker-end="url(#ah)"/>
+            <path class="ln" d="M172 200H200V350H228" marker-end="url(#ah)"/>
+            <rect class="ent" x="230" y="40" width="170" height="100" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="240" y="60">gunicorn instance 1</text>
+            <rect class="q" x="242" y="74" width="10" height="16" rx="2"/><rect class="q" x="256" y="74" width="10" height="16" rx="2"/><rect class="q" x="270" y="74" width="10" height="16" rx="2"/>
+            <path class="ln" d="M284 82H300" marker-end="url(#ah)"/>
+            <rect class="ent" x="304" y="72" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="334" y="72" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="364" y="72" width="26" height="20" rx="3" style="--c: var(--cpu)"/>
+            <text class="m" x="242" y="110">accept queue</text><text class="m" x="304" y="110">workers</text>
+            <rect class="ent" x="230" y="170" width="170" height="100" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="240" y="190">gunicorn instance 2</text>
+            <rect class="q" x="242" y="204" width="10" height="16" rx="2"/><rect class="q" x="256" y="204" width="10" height="16" rx="2"/><rect class="q" x="270" y="204" width="10" height="16" rx="2"/>
+            <path class="ln" d="M284 212H300" marker-end="url(#ah)"/>
+            <rect class="ent" x="304" y="202" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="334" y="202" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="364" y="202" width="26" height="20" rx="3" style="--c: var(--cpu)"/>
+            <text class="m" x="242" y="240">accept queue</text><text class="m" x="304" y="240">workers</text>
+            <rect class="ent" x="230" y="300" width="170" height="100" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="240" y="320">gunicorn instance 3</text>
+            <rect class="q" x="242" y="334" width="10" height="16" rx="2"/><rect class="q" x="256" y="334" width="10" height="16" rx="2"/><rect class="q" x="270" y="334" width="10" height="16" rx="2"/>
+            <path class="ln" d="M284 342H300" marker-end="url(#ah)"/>
+            <rect class="ent" x="304" y="332" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="334" y="332" width="26" height="20" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="364" y="332" width="26" height="20" rx="3" style="--c: var(--cpu)"/>
+            <text class="m" x="242" y="370">accept queue</text><text class="m" x="304" y="370">workers</text>
+            <rect class="ent" x="430" y="150" width="80" height="140" rx="4" style="--c: var(--ssd)"/>
+            <text class="tb" x="470" y="214" text-anchor="middle">database</text>
+            <text class="m" x="470" y="230" text-anchor="middle">shared</text>
+            <path class="ln" d="M400 90H415V170H428" marker-end="url(#ah)"/>
+            <path class="ln" d="M400 220H428" marker-end="url(#ah)"/>
+            <path class="ln" d="M400 350H415V270H428" marker-end="url(#ah)"/>
+            <text class="m" x="10" y="428">connections = instances x workers x pool size</text>
+            <text class="m" x="10" y="446">The instances can run on one machine or several.</text>
           </g>
         </svg>
         <figcaption>One drawing for the whole page. The part you are reading about is outlined, and the workers change to match the model.</figcaption>
@@ -362,12 +394,13 @@
 <section class="screen" data-n="9">
         <h2><span class="rank">9</span>Putting it together</h2>
         <div class="blk"><h3>A typical Python setup</h3>
-          <p>nginx in front, gunicorn behind it. nginx handles the secure handshake and slow clients, and hands whole requests to gunicorn's workers over a fast local connection. Inside each worker you pick the model that fits your code. gunicorn's docs suggest sync for a simple app behind nginx, gthread when you need keep-alive or moderate concurrency, and gevent or an ASGI worker for WebSockets, streaming or async frameworks. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></p>
-          <p>There are two separate connections. The client connects to nginx. The operating system completes that TCP handshake, and then nginx does the TLS handshake. nginx then opens a second connection to gunicorn. That one is often a Unix domain socket, a link between two programs on the same machine addressed by a file path, which needs no TCP handshake at all. It can also be a local TCP port, where the handshake is fast. gunicorn only ever talks to nginx.</p></div>
+          <p>nginx sits in front and gunicorn runs your code. nginx handles the secure handshake and slow clients, and it can also act as the load balancer. You list several gunicorn instances in an <code>upstream</code> block, and nginx spreads the requests across them. Round-robin is the default, and least-connected and IP hash are among the other methods. <a class="src" href="https://nginx.org/en/docs/http/load_balancing.html" target="_blank" rel="noopener">source</a> The instances can run on one machine or on several, and each has its own accept queue and workers.</p>
+          <p>Inside each instance you pick the worker model that fits your code. gunicorn's docs suggest sync for a simple app behind nginx, gthread when you need keep-alive or moderate concurrency, and gevent or an ASGI worker for WebSockets, streaming or async frameworks. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></p>
+          <p>There are separate connections. The client connects to nginx: the operating system completes the TCP handshake, and then nginx does the TLS handshake. nginx then opens its own connections to the gunicorn instances. On the same machine that can be a Unix domain socket, a link between two programs addressed by a file path, which needs no TCP handshake. To an instance on another machine it is an ordinary TCP connection.</p></div>
         <div class="blk"><h3>What stays true in every model</h3>
           <ul>
             <li>Capacity is concurrency divided by time per request, so a slow dependency lowers capacity.</li>
-            <li>Database connections add up: servers × workers × pool size. Postgres, for example, defaults to about 100 connections, so a few busy servers can exceed it. <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a></li>
+            <li>Database connections add up: instances × workers × pool size. Postgres, for example, defaults to about 100 connections, so a few busy servers can exceed it. <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a></li>
             <li>The model decides what a waiting request costs and which rules your code must follow, such as thread safety or never blocking.</li>
           </ul></div>
         <div class="blk"><h3>Questions to ask of any server</h3>
@@ -389,6 +422,7 @@
       <li>Spring Boot, <a href="https://docs.spring.io/spring-boot/reference/web/servlet.html" target="_blank" rel="noopener">servlet web applications</a>: embedded Tomcat and Jetty.</li>
       <li>Node.js, <a href="https://nodejs.org/api/cluster.html" target="_blank" rel="noopener">cluster</a>. Express, <a href="https://expressjs.com/" target="_blank" rel="noopener">homepage</a>.</li>
       <li>Apache Tomcat, <a href="https://tomcat.apache.org/tomcat-10.1-doc/proxy-howto.html" target="_blank" rel="noopener">proxy support</a>: Apache httpd in front of Tomcat with mod_proxy.</li>
+      <li>nginx, <a href="https://nginx.org/en/docs/http/load_balancing.html" target="_blank" rel="noopener">HTTP load balancing</a>: upstream groups, round-robin by default.</li>
       <li>Gunicorn, <a href="https://gunicorn.org/design/" target="_blank" rel="noopener">design</a>: worker types, keep-alive, worker count, buffering proxy.</li>
       <li>nginx, <a href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">Inside NGINX</a>: event-driven design, one worker per core.</li>
       <li>Node.js, <a href="https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick" target="_blank" rel="noopener">the event loop</a>.</li>
@@ -420,8 +454,8 @@
       "node": { fd: "nginx", opt: true, as: "Node", code: "Express app",
         note: "One program plays every role, and cluster mode adds processes. Express is a web framework for Node. <a class=\"src\" href=\"https://expressjs.com/\" target=\"_blank\" rel=\"noopener\">source</a>" }
     };
-    var FORCED = { "1": "py-sync", "3": "py-sync", "4": "py-sync", "5": "java", "6": "node", "7": "go", "9": "py-sync" };
-    var HL = { "1": ["queue"], "3": ["workers"], "4": ["workers"], "5": ["workers"], "6": ["workers"], "7": ["workers"], "9": ["front", "queue"] };
+    var FORCED = { "1": "py-sync", "3": "py-sync", "4": "py-sync", "5": "java", "6": "node", "7": "go" };
+    var HL = { "1": ["queue"], "3": ["workers"], "4": ["workers"], "5": ["workers"], "6": ["workers"], "7": ["workers"], "9": ["lb"] };
     var pick = "py-sync", current = 1;
 
     function mk(tag, attrs, parent, text) {
