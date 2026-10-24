@@ -115,7 +115,7 @@
           </div>
           <p id="stack-note" class="note"></p>
         </div>
-        <svg class="ws" id="ws" viewBox="0 0 520 480" role="img" aria-labelledby="ws-title">
+        <svg class="ws" id="ws" viewBox="0 0 520 540" role="img" aria-labelledby="ws-title">
           <title id="ws-title">A web server stack: clients, an optional front door, then an application server with a listener and accept queue, workers, your code, and a database. The workers are drawn differently for each model: pre-fork processes, a thread pool, an event loop, or lightweight threads.</title>
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
@@ -260,8 +260,12 @@
             <g id="conn-dots"></g>
             <text id="db-total" class="tb" x="435" y="278" text-anchor="middle">135 connections</text>
             <text id="db-limit" class="m" x="435" y="292" text-anchor="middle">limit 100</text>
-            <text class="m" x="10" y="428">per process: the smaller of requests at once and pool size</text>
-            <text class="m" x="10" y="446">Illustrative numbers. Dark dots are past the limit.</text>
+            <text class="tb" x="10" y="430">One instance, for this stack</text>
+            <text id="inf-clients" class="m" x="10" y="448">clients connected: </text>
+            <text id="inf-run" class="m" x="10" y="464">requests running at once: </text>
+            <text id="inf-db" class="m" x="10" y="480">database connections: </text>
+            <text class="m" x="10" y="508">Per process, database connections are the smaller of requests at once and pool size.</text>
+            <text class="m" x="10" y="524">Illustrative numbers. Counts come from doc defaults where one exists.</text>
           </g>
         </svg>
         <figcaption>One drawing for the whole page. The part you are reading about is outlined, and the workers change to match the model.</figcaption>
@@ -491,6 +495,13 @@
       "go":       { exact: false, inst: 3, proc: 1, pool: 10, limit: 100, note: "Illustrative: 3 instances x 1 process x up to 10 = up to 30. Go's database/sql has no default limit, so 10 is a number you would choose. <a class=\"src\" href=\"https://pkg.go.dev/database/sql#DB.SetMaxOpenConns\" target=\"_blank\" rel=\"noopener\">source</a>" },
       "node":     { exact: false, inst: 3, proc: 4, pool: 10, limit: 100, note: "Illustrative: 3 instances x 4 cluster workers x up to 10 = up to 120. The node-postgres default pool is 10 per process. <a class=\"src\" href=\"https://node-postgres.com/apis/pool\" target=\"_blank\" rel=\"noopener\">source</a>" }
     };
+    var INFO = {
+      "py-sync":  { clients: "held by nginx, which can hold many (512 per worker by default)", run: "9, one per gunicorn worker", db: "9, one per worker" },
+      "py-async": { clients: "many per process, as paused tasks", run: "many, limited by CPU and by blocking calls", db: "up to 20 (4 processes x 5)" },
+      "java":     { clients: "up to 8,192 by default (Tomcat)", run: "up to 200 request threads by default", db: "up to 10, one shared pool" },
+      "go":       { clients: "a goroutine each, limited by memory and file descriptors", run: "many, limited by CPU and by what handlers wait on", db: "up to 10, a pool you set" },
+      "node":     { clients: "many per process", run: "many per process, one core of CPU each", db: "up to 40 (4 processes x 10)" }
+    };
     var FORCED = { "1": "py-sync", "3": "py-sync", "4": "py-sync", "5": "java", "6": "node", "7": "go" };
     var HL = { "1": ["queue"], "3": ["workers"], "4": ["workers"], "5": ["workers"], "6": ["workers"], "7": ["workers"], "9": ["lb"], "10": ["db9"] };
     var pick = "py-sync", current = 1;
@@ -523,6 +534,12 @@
         for (var i = 0; i < shown; i++) {
           mk("rect", { "class": "cd" + (i >= d.limit ? " over" : ""), x: 370 + (i % 13) * 10, y: 146 + Math.floor(i / 13) * 10, width: 8, height: 8, rx: 1 }, g);
         }
+      }
+      var inf = INFO[k];
+      if (inf) {
+        var ic = document.getElementById("inf-clients"); if (ic) ic.textContent = "clients connected: " + inf.clients;
+        var ir = document.getElementById("inf-run"); if (ir) ir.textContent = "requests running at once: " + inf.run;
+        var id = document.getElementById("inf-db"); if (id) id.textContent = "database connections: " + inf.db;
       }
       var t1 = document.getElementById("db-total"); if (t1) t1.textContent = (d.exact ? "" : "up to ") + total + " connections";
       var t2 = document.getElementById("db-limit");
