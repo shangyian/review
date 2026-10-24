@@ -51,6 +51,7 @@
   .ws rect.frame { fill: none; stroke: var(--rule); stroke-width: 2; }
   .ws rect.dot { fill: var(--cpu); }
   .ws circle.cl { fill: var(--muted); }
+  .ws circle.cl.idle { fill: none; stroke: var(--muted); stroke-width: 1; }
   .ws rect.q { fill: var(--hop); }
   .ws rect.opt { stroke-dasharray: 5 4; }
   .ws rect.hl { fill: var(--track); stroke-width: 3; }
@@ -115,7 +116,7 @@
           </div>
           <p id="stack-note" class="note"></p>
         </div>
-        <svg class="ws" id="ws" viewBox="0 0 520 540" role="img" aria-labelledby="ws-title">
+        <svg class="ws" id="ws" viewBox="0 0 520 480" role="img" aria-labelledby="ws-title">
           <title id="ws-title">A web server stack: clients, an optional front door, then an application server with a listener and accept queue, workers, your code, and a database. The workers are drawn differently for each model: pre-fork processes, a thread pool, an event loop, or lightweight threads.</title>
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
@@ -224,9 +225,11 @@
           </g>
           <g data-s="9 10">
             <text class="m" x="6" y="138">clients</text>
-            <circle class="cl" cx="22" cy="160" r="6"/><circle class="cl" cx="22" cy="180" r="6"/><circle class="cl" cx="22" cy="200" r="6"/><circle class="cl" cx="22" cy="220" r="6"/><circle class="cl" cx="22" cy="240" r="6"/>
-            <path class="ln" d="M30 160H44M30 180H44M30 200H44M30 220H44M30 240H44M44 160V240"/>
-            <path class="ln" d="M44 200H64" marker-end="url(#ah)"/>
+            <g id="cl9"></g>
+            <text id="cl9-a" class="m" x="6" y="262"></text>
+            <text id="cl9-b" class="m" x="6" y="276"></text>
+            <text id="cl9-c" class="m" x="6" y="290"></text>
+            <path class="ln" d="M54 200H64" marker-end="url(#ah)"/>
             <rect data-part="lb" class="ent" x="66" y="160" width="84" height="80" rx="4" style="--c: var(--hop)"/>
             <text class="tb" x="108" y="190" text-anchor="middle">nginx</text>
             <text class="m" x="108" y="206" text-anchor="middle">front door +</text><text class="m" x="108" y="220" text-anchor="middle">load balancer</text>
@@ -260,12 +263,8 @@
             <g id="conn-dots"></g>
             <text id="db-total" class="tb" x="435" y="278" text-anchor="middle">135 connections</text>
             <text id="db-limit" class="m" x="435" y="292" text-anchor="middle">limit 100</text>
-            <text class="tb" x="10" y="430">One instance, for this stack</text>
-            <text id="inf-clients" class="m" x="10" y="448">clients connected: </text>
-            <text id="inf-run" class="m" x="10" y="464">requests running at once: </text>
-            <text id="inf-db" class="m" x="10" y="480">database connections: </text>
-            <text class="m" x="10" y="508">Per process, database connections are the smaller of requests at once and pool size.</text>
-            <text class="m" x="10" y="524">Illustrative numbers. Counts come from doc defaults where one exists.</text>
+            <text class="m" x="10" y="428">per process: the smaller of requests at once and pool size</text>
+            <text class="m" x="10" y="446">Illustrative numbers. Dark dots are past the limit.</text>
           </g>
         </svg>
         <figcaption>One drawing for the whole page. The part you are reading about is outlined, and the workers change to match the model.</figcaption>
@@ -496,11 +495,11 @@
       "node":     { exact: false, inst: 3, proc: 4, pool: 10, limit: 100, note: "Illustrative: 3 instances x 4 cluster workers x up to 10 = up to 120. The node-postgres default pool is 10 per process. <a class=\"src\" href=\"https://node-postgres.com/apis/pool\" target=\"_blank\" rel=\"noopener\">source</a>" }
     };
     var INFO = {
-      "py-sync":  { clients: "held by nginx, which can hold many (512 per worker by default)", run: "9, one per gunicorn worker", db: "9, one per worker" },
-      "py-async": { clients: "many per process, as paused tasks", run: "many, limited by CPU and by blocking calls", db: "up to 20 (4 processes x 5)" },
-      "java":     { clients: "up to 8,192 by default (Tomcat)", run: "up to 200 request threads by default", db: "up to 10, one shared pool" },
-      "go":       { clients: "a goroutine each, limited by memory and file descriptors", run: "many, limited by CPU and by what handlers wait on", db: "up to 10, a pool you set" },
-      "node":     { clients: "many per process", run: "many per process, one core of CPU each", db: "up to 40 (4 processes x 10)" }
+      "py-sync":  { run: 27, c: "rest wait in nginx" },
+      "py-async": { run: 120, c: "most paused on I/O" },
+      "java":     { run: 120, c: "threads, most waiting" },
+      "go":       { run: 120, c: "goroutine each, cheap" },
+      "node":     { run: 120, c: "most paused on I/O" }
     };
     var FORCED = { "1": "py-sync", "3": "py-sync", "4": "py-sync", "5": "java", "6": "node", "7": "go" };
     var HL = { "1": ["queue"], "3": ["workers"], "4": ["workers"], "5": ["workers"], "6": ["workers"], "7": ["workers"], "9": ["lb"], "10": ["db9"] };
@@ -535,11 +534,15 @@
           mk("rect", { "class": "cd" + (i >= d.limit ? " over" : ""), x: 370 + (i % 13) * 10, y: 146 + Math.floor(i / 13) * 10, width: 8, height: 8, rx: 1 }, g);
         }
       }
-      var inf = INFO[k];
-      if (inf) {
-        var ic = document.getElementById("inf-clients"); if (ic) ic.textContent = "clients connected: " + inf.clients;
-        var ir = document.getElementById("inf-run"); if (ir) ir.textContent = "requests running at once: " + inf.run;
-        var id = document.getElementById("inf-db"); if (id) id.textContent = "database connections: " + inf.db;
+      var inf = INFO[k], cg = document.getElementById("cl9");
+      if (inf && cg) {
+        while (cg.firstChild) cg.removeChild(cg.firstChild);
+        for (var c = 0; c < 120; c++) {
+          mk("circle", { "class": "cl" + (c >= inf.run ? " idle" : ""), cx: 9 + (c % 8) * 6, cy: 152 + Math.floor(c / 8) * 6, r: 2.2 }, cg);
+        }
+        document.getElementById("cl9-a").textContent = "120 connected";
+        document.getElementById("cl9-b").textContent = inf.run + " running";
+        document.getElementById("cl9-c").textContent = inf.c;
       }
       var t1 = document.getElementById("db-total"); if (t1) t1.textContent = (d.exact ? "" : "up to ") + total + " connections";
       var t2 = document.getElementById("db-limit");
