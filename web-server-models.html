@@ -253,9 +253,12 @@
             <text class="m" x="10" y="268">one program, front door optional</text>
 
             <text class="m" x="10" y="314">Go</text>
-            <rect class="ent" x="10" y="322" width="500" height="56" rx="4" style="--c: var(--cpu)"/>
-            <text class="tb" x="260" y="346" text-anchor="middle">one Go program</text><text class="m" x="260" y="362" text-anchor="middle">accepts connections, handles TLS, routes, runs your handler</text>
-            <text class="m" x="10" y="396">one program plays every role</text>
+            <rect class="ent" x="10" y="322" width="140" height="56" rx="4" style="--c: var(--hop); stroke-dasharray: 5 4"/>
+            <text class="tb" x="80" y="346" text-anchor="middle">nginx</text><text class="m" x="80" y="362" text-anchor="middle">optional</text>
+            <path class="ln" d="M150 350H163" marker-end="url(#ah)"/>
+            <rect class="ent" x="165" y="322" width="345" height="56" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="337" y="346" text-anchor="middle">one Go program</text><text class="m" x="337" y="362" text-anchor="middle">accepts connections, handles TLS, routes, runs your handler</text>
+            <text class="m" x="10" y="396">one program plays every role, front door optional</text>
 
             <text class="m" x="10" y="450">These are roles, not products. Some programs play several.</text>
           </g>
@@ -277,9 +280,11 @@
     <div class="stack">
 
       <section class="screen" data-n="1">
-        <h2><span class="rank">1</span>Many requests arrive at once, and each spends most of its time waiting</h2>
-        <div class="blk"><h3>The problem</h3>
-          <p>A web server handles many clients at the same time. For each request, your handler does a few milliseconds of real work and then waits, usually for a database. A server that does one thing at a time would spend nearly all its time idle.</p></div>
+        <h2><span class="rank">1</span>A web server takes requests and runs your code</h2>
+        <div class="blk"><h3>What it does</h3>
+          <p>A web server is a program that listens on a port, accepts connections from clients, reads each HTTP request, runs your code to build a response, and sends it back.</p></div>
+        <div class="blk"><h3>Why it is harder than it sounds</h3>
+          <p>It has to do this for many clients at once. For each request, your code does a few milliseconds of real work and then waits, usually for a database. How a server handles all that waiting is what the rest of the page is about.</p></div>
         <div class="blk"><h3>The shape</h3>
           <p>A listener accepts connections. For whichever program is listening, whether that is nginx or the app server on its own, the operating system finishes each TCP handshake and queues the finished connections until the program takes one. Workers take requests from there and run your handler, which talks to the database.</p></div>
         <div class="blk"><h3>The question</h3>
@@ -301,7 +306,7 @@
           <ul>
             <li><b>Python:</b> usually two programs. nginx is the front door and gunicorn is the application server that runs your Flask or Django code.</li>
             <li><b>Java with Spring Boot:</b> one process. Spring Boot includes support for embedded Tomcat and Jetty servers, so the application server lives inside your own program. <a class="src" href="https://docs.spring.io/spring-boot/reference/web/servlet.html" target="_blank" rel="noopener">source</a></li>
-            <li><b>Go:</b> one program. Its HTTP server accepts connections and calls your handler directly. <a class="src" href="https://pkg.go.dev/net/http#Serve" target="_blank" rel="noopener">source</a></li>
+            <li><b>Go:</b> one program. Its HTTP server accepts connections and calls your handler directly, and a front door is optional. <a class="src" href="https://pkg.go.dev/net/http#Serve" target="_blank" rel="noopener">source</a></li>
           </ul>
           <p>These are roles, not products. Some programs play several of them, and a front door is still common in front of a one-program server. The rest of the page is about how the program in the middle role runs many requests at once.</p></div>
       </section>
