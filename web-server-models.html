@@ -97,37 +97,49 @@
           </defs>
 
           
-          <!-- many clients, the instance boundary, and the listener with its accept queue -->
+          <!-- horizontal row: clients, listener, accept queue, master -->
           <g data-s="1 3 4 5 6 7 8 9 10">
-            <circle class="cl" cx="18" cy="24" r="6"/><circle class="cl" cx="44" cy="24" r="6"/><circle class="cl" cx="70" cy="24" r="6"/><circle class="cl" cx="96" cy="24" r="6"/><circle class="cl" cx="122" cy="24" r="6"/>
-            <text class="m" x="140" y="28">many clients, all at once</text>
+            <text class="m" x="6" y="28">clients</text>
+            <circle class="cl" cx="22" cy="44" r="6"/><circle class="cl" cx="22" cy="64" r="6"/><circle class="cl" cx="22" cy="84" r="6"/><circle class="cl" cx="22" cy="104" r="6"/><circle class="cl" cx="22" cy="124" r="6"/>
+            <path class="ln" d="M30 44H44M30 64H44M30 84H44M30 104H44M30 124H44M44 44V124"/>
+            <path class="ln" d="M44 84H70" marker-end="url(#ah)"/>
           </g>
-          <g data-s="1 3 4 5 6 7 8 9">
-            <path class="ln" d="M18 32L55 290M44 32L55 290M70 32L55 290M96 32L55 290M122 32L55 290"/>
-            <path class="ln" d="M55 290V308" marker-end="url(#ah)"/>
+          <g data-s="1 3 4 5 6 7 8 9 10" data-new="1"><rect class="frame" x="60" y="10" width="440" height="572" rx="8" stroke-dasharray="6 4"/></g>
+          <g data-s="1 3 4 5 6 7 8 9"><text class="m" x="68" y="26">one web server instance</text></g>
+          <g data-s="10"><text class="m" x="68" y="26">one machine</text></g>
+
+          <g data-s="1 3 4 5 6 7 8 9" style="--c: var(--hop)">
+            <rect class="ent" x="72" y="52" width="80" height="64" rx="4"/>
+            <text class="tb" x="112" y="88" text-anchor="middle">listener</text>
+            <path class="ln" d="M152 84H170" marker-end="url(#ah)"/>
+            <rect class="ent" x="172" y="52" width="150" height="64" rx="4"/>
+            <rect class="q" x="199" y="62" width="18" height="22" rx="2"/><rect class="q" x="225" y="62" width="18" height="22" rx="2"/><rect class="q" x="251" y="62" width="18" height="22" rx="2"/><rect class="q" x="277" y="62" width="18" height="22" rx="2"/>
+            <text class="m" x="247" y="104" text-anchor="middle">accept queue</text>
+            <path class="ln" d="M247 116V146" marker-end="url(#ah)"/>
           </g>
           <g data-s="10" data-new="10" style="--c: var(--hop)">
-            <path class="ln" d="M18 32L55 184M44 32L55 184M70 32L55 184M96 32L55 184M122 32L55 184"/>
-            <path class="ln" d="M55 184V198" marker-end="url(#ah)"/>
-            <text class="m" x="62" y="195">connection 1</text>
-            <rect class="ent" x="10" y="200" width="90" height="50" rx="4"/>
-            <text class="tb" x="55" y="222" text-anchor="middle">nginx</text>
-            <text class="m" x="55" y="238" text-anchor="middle">slow clients</text>
-            <path class="ln" d="M55 250V308" marker-end="url(#ah)"/>
-            <text class="m" x="62" y="274">connection 2</text>
-            <text class="m" x="62" y="288">often a Unix socket</text>
+            <rect class="ent" x="72" y="52" width="76" height="64" rx="4"/>
+            <text class="tb" x="110" y="82" text-anchor="middle">nginx</text><text class="m" x="110" y="98" text-anchor="middle">proxy</text>
+            <path class="ln" d="M148 84H158" marker-end="url(#ah)"/>
+            <rect class="ent" x="160" y="52" width="76" height="64" rx="4"/>
+            <text class="tb" x="198" y="80" text-anchor="middle">gunicorn's</text><text class="m" x="198" y="96" text-anchor="middle">listener</text>
+            <path class="ln" d="M236 84H246" marker-end="url(#ah)"/>
+            <rect class="ent" x="248" y="52" width="100" height="64" rx="4"/>
+            <rect class="q" x="261" y="62" width="14" height="18" rx="2"/><rect class="q" x="281" y="62" width="14" height="18" rx="2"/><rect class="q" x="301" y="62" width="14" height="18" rx="2"/><rect class="q" x="321" y="62" width="14" height="18" rx="2"/>
+            <text class="m" x="298" y="104" text-anchor="middle">accept queue</text>
+            <path class="ln" d="M298 116V146" marker-end="url(#ah)"/>
           </g>
-          <g data-s="1 3 4 5 6 7 8 9 10" data-new="1"><rect class="frame" x="2" y="80" width="516" height="490" rx="8" stroke-dasharray="6 4"/></g>
-          <g data-s="1 3 4 5 6 7 8 9"><text class="m" x="10" y="98">one web server instance</text></g>
-          <g data-s="10"><text class="m" x="10" y="98">one machine</text></g>
-          <g data-s="1 3 4 5 6 7 8 9 10" style="--c: var(--hop)">
-            <rect class="ent" x="10" y="310" width="90" height="76" rx="4"/>
-            <rect class="q" x="16" y="344" width="14" height="18" rx="2"/><rect class="q" x="36" y="344" width="14" height="18" rx="2"/><rect class="q" x="56" y="344" width="14" height="18" rx="2"/><rect class="q" x="76" y="344" width="14" height="18" rx="2"/>
-            <text class="m" x="55" y="376" text-anchor="middle">accept queue</text>
-            <path class="ln" d="M100 348H168" marker-end="url(#ah)"/>
+          <g data-s="4 5 6 7 8 9" data-new="4" style="--c: var(--cpu)">
+            <rect class="ent" x="330" y="52" width="160" height="64" rx="4"/>
+            <text class="tb" x="410" y="80" text-anchor="middle">master</text>
+            <text class="m" x="410" y="94" text-anchor="middle">forks and</text><text class="m" x="410" y="106" text-anchor="middle">restarts workers</text>
+            <path class="ln" d="M410 116V146" marker-end="url(#ah)"/>
           </g>
-          <g data-s="1 3 4 5 6 7 8 9"><text class="tb" x="55" y="326" text-anchor="middle">listener</text></g>
-          <g data-s="10"><text class="tb" x="55" y="324" text-anchor="middle">gunicorn's</text><text class="m" x="55" y="337" text-anchor="middle">listener</text></g>
+          <g data-s="10" style="--c: var(--cpu)">
+            <rect class="ent" x="360" y="52" width="130" height="64" rx="4"/>
+            <text class="tb" x="425" y="82" text-anchor="middle">master</text><text class="m" x="425" y="98" text-anchor="middle">forks workers</text>
+            <path class="ln" d="M425 116V146" marker-end="url(#ah)"/>
+          </g>
 
           <!-- roles: front door, application server, your code -->
           <g data-s="2" data-new="2">
@@ -165,7 +177,7 @@
             <text class="m" x="10" y="450">These are roles, not products. Some programs play several.</text>
           </g>
 
-          <g transform="translate(0,70)">
+          <g transform="translate(-40,78)">
           <g data-s="1 3 4 5 6 7 8 9 10" style="--c: var(--ssd)">
             <rect class="ent" x="170" y="530" width="340" height="50" rx="4"/>
             <text class="tb" x="340" y="552" text-anchor="middle">database</text>
@@ -179,10 +191,6 @@
 
           <!-- pre-fork: master and the other workers -->
           <g data-s="4 5 6 7 8 9 10" data-new="4" style="--c: var(--cpu)">
-            <rect class="ent" x="260" y="16" width="160" height="38" rx="4"/>
-            <text class="tb" x="340" y="33" text-anchor="middle">master</text>
-            <text class="m" x="340" y="47" text-anchor="middle">forks and replaces workers</text>
-            <path class="ln" d="M340 54V68" marker-end="url(#ah)"/>
             <rect class="ent" x="180" y="448" width="150" height="38" rx="4"/>
             <text class="tb" x="255" y="472" text-anchor="middle">worker 2</text>
             <rect class="ent" x="350" y="448" width="150" height="38" rx="4"/>
