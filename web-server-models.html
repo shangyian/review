@@ -36,7 +36,7 @@
   .layout aside { position: sticky; top: 16px; }
   .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
   .layout figcaption { font-size: 0.75rem; color: var(--muted); }
-  .layout svg { width: 100%; max-height: calc(100vh - 90px); }
+  .layout svg { width: 100%; max-height: calc(100vh - 190px); }
   @media (max-width: 860px) {
     .layout { grid-template-columns: minmax(0, 1fr); }
     .layout aside { position: static; max-width: 520px; }
@@ -53,6 +53,11 @@
   .ws circle.cl { fill: var(--muted); }
   .ws rect.q { fill: var(--hop); }
   .ws rect.opt { stroke-dasharray: 5 4; }
+  .ws .view { display: none; }
+  .ws .view.on { display: inline; }
+  #stack-ui { padding: 10px 12px; background: var(--track); border-radius: 4px; display: flex; flex-direction: column; gap: 6px; }
+  .stack-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  #stack-ui .note { margin: 0; font-size: 0.8125rem; }
   .picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
   .picker button { font: inherit; font-size: 0.8125rem; padding: 4px 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--fg); border-radius: 4px; cursor: pointer; }
   .picker button[aria-pressed="true"] { background: var(--track); border-color: var(--fg); }
@@ -93,6 +98,17 @@
   <div class="layout">
     <aside>
       <figure>
+        <div id="stack-ui" hidden>
+          <div class="stack-label">Pick a stack</div>
+          <div class="picker" id="picker" role="group" aria-label="Pick a stack">
+            <button type="button" data-stack="py-sync" aria-pressed="true">Python, sync</button>
+            <button type="button" data-stack="py-async" aria-pressed="false">Python, async</button>
+            <button type="button" data-stack="java" aria-pressed="false">Java</button>
+            <button type="button" data-stack="go" aria-pressed="false">Go</button>
+            <button type="button" data-stack="node" aria-pressed="false">Node</button>
+          </div>
+          <p id="stack-note" class="note"></p>
+        </div>
         <svg class="ws" id="ws" viewBox="0 0 520 690" role="img" aria-labelledby="ws-title">
           <title id="ws-title">A web server: clients reach a listener and an accept queue, then workers run the handler, which talks to a database. The picture inside a worker changes with each model: one request at a time, a thread pool, an event loop, or lightweight threads.</title>
           <defs>
@@ -146,7 +162,7 @@
             <path class="ln" d="M425 116V146" marker-end="url(#ah)"/>
           </g>
 
-          <!-- the same shape, relabeled per stack (screen 2) -->
+          <!-- the same shape, relabeled and redrawn per stack (screen 2) -->
           <g data-s="2">
             <text class="m" x="6" y="28">clients</text>
             <circle class="cl" cx="22" cy="70" r="6"/><circle class="cl" cx="22" cy="90" r="6"/><circle class="cl" cx="22" cy="110" r="6"/><circle class="cl" cx="22" cy="130" r="6"/><circle class="cl" cx="22" cy="150" r="6"/>
@@ -157,7 +173,7 @@
             <text id="fd-name" class="tb" x="132" y="106" text-anchor="middle">nginx</text>
             <text id="fd-sub" class="m" x="132" y="122" text-anchor="middle">required</text>
             <path class="ln" d="M192 110H210" marker-end="url(#ah)"/>
-            <rect class="frame" x="212" y="10" width="298" height="350" rx="8" stroke-dasharray="6 4"/>
+            <rect class="frame" x="212" y="10" width="298" height="372" rx="8" stroke-dasharray="6 4"/>
             <text class="m" x="222" y="28">application server</text>
             <text id="as-name" class="tb" x="222" y="46">gunicorn</text>
             <rect class="ent" x="222" y="62" width="84" height="52" rx="4" style="--c: var(--hop)"/>
@@ -167,18 +183,71 @@
             <rect class="q" x="362" y="70" width="18" height="22" rx="2"/><rect class="q" x="388" y="70" width="18" height="22" rx="2"/><rect class="q" x="414" y="70" width="18" height="22" rx="2"/><rect class="q" x="440" y="70" width="18" height="22" rx="2"/>
             <text class="m" x="410" y="106" text-anchor="middle">accept queue</text>
             <path class="ln" d="M410 114V146" marker-end="url(#ah)"/>
-            <rect class="ent" x="222" y="148" width="278" height="96" rx="4" style="--c: var(--cpu)"/>
-            <text class="m" x="232" y="166">workers</text>
-            <text id="w1" class="tb" x="361" y="198" text-anchor="middle">pre-fork workers</text>
-            <text id="w2" class="m" x="361" y="216" text-anchor="middle">one request at a time each</text>
-            <path class="ln" d="M361 244V270" marker-end="url(#ah)"/>
-            <rect class="ent" x="222" y="272" width="278" height="60" rx="4" style="--c: var(--ram)"/>
-            <text id="code" class="tb" x="361" y="300" text-anchor="middle">Flask or Django app</text>
-            <text class="m" x="361" y="316" text-anchor="middle">your handler</text>
-            <path class="ln" d="M361 332V390" marker-end="url(#ah)"/>
-            <rect class="ent" x="222" y="392" width="278" height="50" rx="4" style="--c: var(--ssd)"/>
-            <text class="tb" x="361" y="414" text-anchor="middle">database</text>
-            <text class="m" x="361" y="430" text-anchor="middle">has its own connection limit</text>
+
+            <rect class="ent" x="222" y="148" width="278" height="124" rx="4" style="--c: var(--cpu)"/>
+
+            <g class="view" data-view="py-sync">
+              <text class="m" x="232" y="164">pre-fork: separate processes</text>
+              <rect class="ent" x="232" y="170" width="100" height="22" rx="3" style="--c: var(--cpu)"/>
+              <text class="tb" x="282" y="185" text-anchor="middle">master</text>
+              <path class="ln" d="M282 192V202M272 202H452"/><path class="ln" d="M272 202V210" marker-end="url(#ah)"/><path class="ln" d="M362 202V210" marker-end="url(#ah)"/><path class="ln" d="M452 202V210" marker-end="url(#ah)"/>
+              <rect class="ent" x="232" y="210" width="80" height="52" rx="4" style="--c: var(--cpu)"/>
+              <text class="tb" x="272" y="226" text-anchor="middle">worker</text>
+              <text class="m" x="272" y="240" text-anchor="middle">own memory</text>
+              <text class="m" x="272" y="254" text-anchor="middle">1 request</text>
+              <rect class="ent" x="322" y="210" width="80" height="52" rx="4" style="--c: var(--cpu)"/>
+              <text class="tb" x="362" y="226" text-anchor="middle">worker</text>
+              <text class="m" x="362" y="240" text-anchor="middle">own memory</text>
+              <text class="m" x="362" y="254" text-anchor="middle">1 request</text>
+              <rect class="ent" x="412" y="210" width="80" height="52" rx="4" style="--c: var(--cpu)"/>
+              <text class="tb" x="452" y="226" text-anchor="middle">worker</text>
+              <text class="m" x="452" y="240" text-anchor="middle">own memory</text>
+              <text class="m" x="452" y="254" text-anchor="middle">1 request</text>
+            </g>
+            <g class="view" data-view="py-async">
+              <text class="m" x="232" y="164">pre-fork processes, each with an event loop</text>
+              <rect class="ent" x="232" y="170" width="100" height="22" rx="3" style="--c: var(--cpu)"/>
+              <text class="tb" x="282" y="185" text-anchor="middle">master</text>
+              <path class="ln" d="M282 192V202M272 202H452"/><path class="ln" d="M272 202V210" marker-end="url(#ah)"/><path class="ln" d="M362 202V210" marker-end="url(#ah)"/><path class="ln" d="M452 202V210" marker-end="url(#ah)"/>
+              <rect class="ent" x="232" y="210" width="80" height="52" rx="4" style="--c: var(--cpu)"/>
+              <text class="tb" x="272" y="226" text-anchor="middle">worker</text>
+              <text class="m" x="272" y="240" text-anchor="middle">event loop</text>
+              <rect class="q" x="258" y="246" width="8" height="8" rx="1"/><rect class="q" x="268" y="246" width="8" height="8" rx="1"/><rect class="q" x="278" y="246" width="8" height="8" rx="1"/>
+              <rect class="ent" x="322" y="210" width="80" height="52" rx="4" style="--c: var(--cpu)"/>
+              <text class="tb" x="362" y="226" text-anchor="middle">worker</text>
+              <text class="m" x="362" y="240" text-anchor="middle">event loop</text>
+              <rect class="q" x="348" y="246" width="8" height="8" rx="1"/><rect class="q" x="358" y="246" width="8" height="8" rx="1"/><rect class="q" x="368" y="246" width="8" height="8" rx="1"/>
+              <rect class="ent" x="412" y="210" width="80" height="52" rx="4" style="--c: var(--cpu)"/>
+              <text class="tb" x="452" y="226" text-anchor="middle">worker</text>
+              <text class="m" x="452" y="240" text-anchor="middle">event loop</text>
+              <rect class="q" x="438" y="246" width="8" height="8" rx="1"/><rect class="q" x="448" y="246" width="8" height="8" rx="1"/><rect class="q" x="458" y="246" width="8" height="8" rx="1"/>
+            </g>
+            <g class="view" data-view="java">
+              <text class="m" x="232" y="164">one process, shared memory</text>
+              <g id="java-threads"></g>
+              <text class="m" x="232" y="262">request thread pool, 200 by default</text>
+            </g>
+            <g class="view" data-view="go">
+              <text class="m" x="232" y="164">one process</text>
+              <g id="go-dots"></g>
+              <text class="m" x="232" y="262">a goroutine per connection, on a few OS threads</text>
+            </g>
+            <g class="view" data-view="node">
+              <text class="m" x="232" y="164">one process, one thread</text>
+              <rect class="ent" x="236" y="176" width="252" height="34" rx="4" style="--c: var(--cpu)"/>
+              <text class="tb" x="362" y="197" text-anchor="middle">event loop</text>
+              <rect class="q" x="236" y="224" width="76" height="30" rx="3"/><rect class="q" x="324" y="224" width="76" height="30" rx="3"/><rect class="q" x="412" y="224" width="76" height="30" rx="3"/>
+              <text class="tb" x="274" y="243" text-anchor="middle" style="fill:var(--bg)">task</text><text class="tb" x="362" y="243" text-anchor="middle" style="fill:var(--bg)">task</text><text class="tb" x="450" y="243" text-anchor="middle" style="fill:var(--bg)">task</text>
+            </g>
+
+            <path class="ln" d="M361 272V296" marker-end="url(#ah)"/>
+            <rect class="ent" x="222" y="298" width="278" height="56" rx="4" style="--c: var(--ram)"/>
+            <text id="code" class="tb" x="361" y="324" text-anchor="middle">Flask or Django app</text>
+            <text class="m" x="361" y="340" text-anchor="middle">your handler</text>
+            <path class="ln" d="M361 354V410" marker-end="url(#ah)"/>
+            <rect class="ent" x="222" y="412" width="278" height="50" rx="4" style="--c: var(--ssd)"/>
+            <text class="tb" x="361" y="434" text-anchor="middle">database</text>
+            <text class="m" x="361" y="450" text-anchor="middle">has its own connection limit</text>
           </g>
 
           <g transform="translate(-40,78)">
@@ -323,14 +392,7 @@
             <li><b>Your code:</b> the handler that builds the response.</li>
           </ul></div>
         <div class="blk"><h3>Pick a stack</h3>
-          <div class="picker" id="picker" role="group" aria-label="Pick a stack">
-            <button type="button" data-stack="py-sync" aria-pressed="true">Python, sync</button>
-            <button type="button" data-stack="py-async" aria-pressed="false">Python, async</button>
-            <button type="button" data-stack="java" aria-pressed="false">Java</button>
-            <button type="button" data-stack="go" aria-pressed="false">Go</button>
-            <button type="button" data-stack="node" aria-pressed="false">Node</button>
-          </div>
-          <p id="stack-note" class="note"></p></div>
+          <p>Use the buttons above the diagram to switch stacks. The workers are drawn differently for each one.</p></div>
         <div class="blk"><h3>How the stacks divide them</h3>
           <ul>
             <li><b>Python:</b> usually two programs. nginx is the front door and gunicorn is the application server that runs your Flask or Django code.</li>
@@ -533,8 +595,9 @@
       var d = STACKS[k]; if (!d) return;
       function t(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
       t("fd-name", d.fd); t("fd-sub", d.opt ? "optional" : "required");
-      t("as-name", d.as); t("w1", d.w1); t("w2", d.w2); t("code", d.code);
+      t("as-name", d.as); t("code", d.code);
       var r = document.getElementById("fd-rect"); if (r) r.classList.toggle("opt", d.opt);
+      document.querySelectorAll(".ws g.view").forEach(function (g) { g.classList.toggle("on", g.getAttribute("data-view") === k); });
       var n = document.getElementById("stack-note"); if (n) n.innerHTML = d.note;
       document.querySelectorAll("#picker button").forEach(function (b) {
         b.setAttribute("aria-pressed", String(b.getAttribute("data-stack") === k));
@@ -545,7 +608,27 @@
       var b = e.target.closest("button[data-stack]"); if (b) setStack(b.getAttribute("data-stack"));
     });
     setStack("py-sync");
+    var NS2 = "http://www.w3.org/2000/svg";
+    function mk(tag, attrs, parent, text) {
+      var e = document.createElementNS(NS2, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (text) e.textContent = text;
+      parent.appendChild(e);
+      return e;
+    }
+    var jt = document.getElementById("java-threads");
+    if (jt) for (var jr = 0; jr < 2; jr++) for (var jc = 0; jc < 4; jc++) {
+      var jx = 236 + jc * 64, jy = 178 + jr * 40;
+      mk("rect", { "class": "ent", x: jx, y: jy, width: 56, height: 30, rx: 3, style: "--c: var(--cpu)" }, jt);
+      mk("text", { "class": "m", x: jx + 28, y: jy + 19, "text-anchor": "middle" }, jt, "thread");
+    }
+    var gd = document.getElementById("go-dots");
+    if (gd) for (var gr = 0; gr < 3; gr++) for (var gc = 0; gc < 14; gc++) {
+      mk("rect", { "class": "dot", x: 236 + gc * 18, y: 178 + gr * 24, width: 12, height: 12, rx: 2 }, gd);
+    }
+    var ui = document.getElementById("stack-ui");
     function show(n) {
+      if (ui) ui.hidden = String(n) !== "2";
       groups.forEach(function (g) {
         var on = g.getAttribute("data-s").split(" ").indexOf(String(n)) > -1;
         g.classList.toggle("show", on);
