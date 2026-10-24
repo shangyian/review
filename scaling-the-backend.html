@@ -104,11 +104,11 @@
               <path d="M0 0L8 4L0 8z" fill="var(--ocean)"/>
             </marker>
           </defs>
-          <text class="m" id="prog" x="10" y="16">screen 1 of 10</text>
+          <text class="m" id="prog" x="10" y="16">screen 1 of 9</text>
 
           <!-- requests arriving from the edge -->
           <g data-s="1 2"><path class="ln" d="M215 24V148" marker-end="url(#ah)"/><text class="m" x="222" y="40">from the CDN edge</text></g>
-          <g data-s="3 4 5 6 7 8 9 10"><path class="ln" d="M215 24V58" marker-end="url(#ah)"/><text class="m" x="222" y="40">from the CDN edge</text></g>
+          <g data-s="3 4 5 6 7 8 9"><path class="ln" d="M215 24V58" marker-end="url(#ah)"/><text class="m" x="222" y="40">from the CDN edge</text></g>
 
           <!-- screen 1: everything on one machine -->
           <g data-s="1" data-new="1" style="--c: var(--cpu)">
@@ -129,56 +129,41 @@
           </g>
 
           <!-- screen 2: database on its own machine -->
-          <g data-s="2 3 4 5 6 7 8 9 10" data-new="2" style="--c: var(--cpu)">
+          <g data-s="2 3 4 5 6 7 8 9" data-new="2" style="--c: var(--cpu)">
             <rect class="ent" x="170" y="150" width="90" height="46" rx="4"/>
           </g>
           <g data-s="2" data-new="2"><path class="ln" d="M215 196V338" marker-end="url(#ah)"/><text class="m" x="222" y="270">0.5 ms hop</text></g>
-          <g data-s="2 3 4 5 6" data-new="2" style="--c: var(--ssd)">
+          <g data-s="2 3 4 5" data-new="2" style="--c: var(--ssd)">
             <rect class="ent" x="165" y="340" width="100" height="56" rx="4"/>
             <text class="tb" x="215" y="364" text-anchor="middle">database</text>
             <text class="m" x="215" y="380" text-anchor="middle">on SSD</text>
           </g>
-          <g data-s="2 3 4 5 6 7"><text class="tb" x="215" y="177" text-anchor="middle">app</text></g>
+          <g data-s="2 3 4 5 6"><text class="tb" x="215" y="177" text-anchor="middle">app</text></g>
 
           <!-- screen 3: load balancer and several app servers -->
-          <g data-s="3 4 5 6 7 8 9 10" data-new="3" style="--c: var(--cpu)">
+          <g data-s="3 4 5 6 7 8 9" data-new="3" style="--c: var(--cpu)">
             <rect class="ent" x="155" y="60" width="120" height="40" rx="4"/>
             <text class="tb" x="215" y="84" text-anchor="middle">load balancer</text>
             <rect class="ent" x="60" y="150" width="90" height="46" rx="4"/>
             <rect class="ent" x="280" y="150" width="90" height="46" rx="4"/>
             <path class="ln" d="M215 100V118"/><path class="ln" d="M105 118H325"/><path class="ln" d="M105 118V148" marker-end="url(#ah)"/><path class="ln" d="M215 118V148" marker-end="url(#ah)"/><path class="ln" d="M325 118V148" marker-end="url(#ah)"/>
           </g>
-          <g data-s="3 4 5 6 7"><text class="tb" x="105" y="177" text-anchor="middle">app</text><text class="tb" x="325" y="177" text-anchor="middle">app</text></g>
-          <g data-s="3 4 5 6 7 8 9 10"><path class="ln" d="M105 196V226H325V196"/><path class="ln" d="M215 196V226"/></g>
-          <g data-s="3 4 5 6"><path class="ln" d="M215 226V338" marker-end="url(#ah)"/><text class="m" x="222" y="290">0.5 ms hop</text></g>
+          <g data-s="3 4 5 6"><text class="tb" x="105" y="177" text-anchor="middle">app</text><text class="tb" x="325" y="177" text-anchor="middle">app</text></g>
+          <g data-s="3 4 5 6 7 8 9"><path class="ln" d="M105 196V226H325V196"/><path class="ln" d="M215 196V226"/></g>
+          <g data-s="3 4 5"><path class="ln" d="M215 226V338" marker-end="url(#ah)"/><text class="m" x="222" y="290">0.5 ms hop</text></g>
 
           <!-- screen 4: cache -->
-          <g data-s="4 5 6 7 8 9 10" data-new="4" style="--c: var(--ram)">
+          <g data-s="4 5 6 7 8 9" data-new="4" style="--c: var(--ram)">
             <rect class="ent" x="8" y="262" width="90" height="48" rx="4"/>
             <text class="tb" x="53" y="283" text-anchor="middle">cache</text>
             <text class="m" x="53" y="298" text-anchor="middle">in RAM</text>
             <path class="ln" d="M105 226H53V260" marker-end="url(#ah)"/>
             <text class="m" x="58" y="248">hit</text>
           </g>
-          <g data-s="4 5 6" data-new="4"><path class="ln dash" d="M98 290H140V368H163" marker-end="url(#ah)"/><text class="m" x="104" y="318">miss</text></g>
+          <g data-s="4 5" data-new="4"><path class="ln dash" d="M98 290H140V368H163" marker-end="url(#ah)"/><text class="m" x="104" y="318">miss</text></g>
 
-          <!-- screen 5: queue and workers -->
-          <g data-s="5 6 7 8 9 10" data-new="5" style="--c: var(--ssd)">
-            <rect class="ent" x="410" y="150" width="100" height="44" rx="4"/>
-            <text class="tb" x="460" y="170" text-anchor="middle">queue</text>
-            <text class="m" x="460" y="184" text-anchor="middle">durable</text>
-            <path class="ln" d="M370 173H408" marker-end="url(#ah)"/>
-            <path class="ln" d="M460 194V228" marker-end="url(#ah)"/>
-          </g>
-          <g data-s="5 6 7 8 9 10" data-new="5" style="--c: var(--cpu)">
-            <rect class="ent" x="410" y="230" width="100" height="44" rx="4"/>
-            <text class="tb" x="460" y="250" text-anchor="middle">workers</text>
-            <text class="m" x="460" y="264" text-anchor="middle">slow jobs</text>
-          </g>
-          <g data-s="5 6"><path class="ln dash" d="M410 258H300V368H267" marker-end="url(#ah)"/></g>
-
-          <!-- screen 6: read replicas -->
-          <g data-s="6" data-new="6" style="--c: var(--ssd)">
+          <!-- screen 4: read replicas -->
+          <g data-s="4 5" data-new="4" style="--c: var(--ssd)">
             <rect class="ent" x="115" y="432" width="90" height="44" rx="4"/>
             <text class="tb" x="160" y="452" text-anchor="middle">replica</text>
             <text class="m" x="160" y="466" text-anchor="middle">reads</text>
@@ -189,8 +174,23 @@
             <text class="m" x="222" y="410">copies the log</text>
           </g>
 
-          <!-- screen 7: shards -->
-          <g data-s="7 8 9 10" data-new="7" style="--c: var(--ssd)">
+          <!-- screen 5: queue and workers -->
+          <g data-s="5 6 7 8 9" data-new="5" style="--c: var(--ssd)">
+            <rect class="ent" x="410" y="150" width="100" height="44" rx="4"/>
+            <text class="tb" x="460" y="170" text-anchor="middle">queue</text>
+            <text class="m" x="460" y="184" text-anchor="middle">durable</text>
+            <path class="ln" d="M370 173H408" marker-end="url(#ah)"/>
+            <path class="ln" d="M460 194V228" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="5 6 7 8 9" data-new="5" style="--c: var(--cpu)">
+            <rect class="ent" x="410" y="230" width="100" height="44" rx="4"/>
+            <text class="tb" x="460" y="250" text-anchor="middle">workers</text>
+            <text class="m" x="460" y="264" text-anchor="middle">slow jobs</text>
+          </g>
+          <g data-s="5"><path class="ln dash" d="M410 258H300V368H267" marker-end="url(#ah)"/></g>
+
+          <!-- screen 6: shards -->
+          <g data-s="6 7 8 9" data-new="6" style="--c: var(--ssd)">
             <path class="ln" d="M215 226V316"/><path class="ln" d="M105 316H325"/><path class="ln" d="M105 316V338" marker-end="url(#ah)"/><path class="ln" d="M215 316V338" marker-end="url(#ah)"/><path class="ln" d="M325 316V338" marker-end="url(#ah)"/>
             <text class="m" x="222" y="300">route by key</text>
             <rect class="ent" x="60" y="340" width="90" height="56" rx="4"/>
@@ -203,10 +203,10 @@
             <text class="tb" x="325" y="364" text-anchor="middle">shard C</text>
             <text class="m" x="325" y="380" text-anchor="middle">own copies</text>
           </g>
-          <g data-s="7 8 9 10"><path class="ln dash" d="M53 310V368H58" marker-end="url(#ah)"/><path class="ln dash" d="M410 258H390V368H372" marker-end="url(#ah)"/></g>
+          <g data-s="6 7 8 9"><path class="ln dash" d="M53 310V368H58" marker-end="url(#ah)"/><path class="ln dash" d="M410 258H390V368H372" marker-end="url(#ah)"/></g>
 
-          <!-- screen 8: services -->
-          <g data-s="8 9 10" data-new="8">
+          <!-- screen 7: services -->
+          <g data-s="7 8 9" data-new="7">
             <text class="tb" x="105" y="177" text-anchor="middle">users</text>
             <text class="tb" x="215" y="177" text-anchor="middle">orders</text>
             <text class="tb" x="325" y="177" text-anchor="middle">payments</text>
@@ -214,8 +214,8 @@
             <text class="m" x="222" y="214">each call is a hop</text>
           </g>
 
-          <!-- screen 9: second region -->
-          <g data-s="9 10" data-new="9" style="--c: var(--ocean)">
+          <!-- screen 8: second region -->
+          <g data-s="8 9" data-new="8" style="--c: var(--ocean)">
             <rect class="frame" x="2" y="28" width="516" height="388" rx="8"/>
             <text class="m" x="10" y="44">region 1</text>
             <path d="M215 400V498" stroke="var(--ocean)" stroke-width="1.75" fill="none" stroke-dasharray="5 4" marker-end="url(#aho)"/>
@@ -248,7 +248,6 @@
           <p>It is simple and fast, and consistency is free because there is only one copy to disagree with. But it is one point of failure. While the machine is down, so is the site. The data survives a crash because it is on SSD, but it is lost if the disk is, unless it was backed up.</p>
           <p>Many sites never need more. When it does get slow, the first moves are cheap ones: tune the slow queries, add workers, or move to a bigger machine. Add a new piece only when a measured problem calls for it. The screens below are in a teaching order, not a fixed history. Real systems often add a cache or a replica before a second app server.</p></div>
       </section>
-
       <section class="screen" data-n="2">
         <h2><span class="rank">2</span>The app and the database compete for one machine</h2>
         <div class="blk"><h3>The problem</h3>
@@ -260,7 +259,6 @@
         <div class="blk"><h3>The price</h3>
           <p>A hop on every query, and code that queries in a loop gets expensive. There is still one copy of the data, so there are no stale reads. If the network between the two breaks, the app cannot answer. It fails rather than guess.</p></div>
       </section>
-
       <section class="screen" data-n="3">
         <h2><span class="rank">3</span>One machine cannot be big enough, and cannot be allowed to fail</h2>
         <div class="blk"><h3>The problem</h3>
@@ -285,23 +283,33 @@
         <div class="blk"><h3>The price</h3>
           <p>The database is now shared by every worker, and connections to it are limited. Postgres, for example, defaults to about 100 connections <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a> and runs one process per connection. <a class="src" href="https://www.postgresql.org/docs/current/connect-estab.html" target="_blank" rel="noopener">source</a> Twenty servers × 8 workers × 2 connections each is 320, well above 100, so a connection pooler usually sits in front. The load balancer must also not become the new single point of failure, so it needs a backup.</p></div>
       </section>
-
       <section class="screen" data-n="4">
-        <h2><span class="rank">4</span>The same reads hit SSD again and again</h2>
+        <h2><span class="rank">4</span>Reads overwhelm the database</h2>
         <div class="blk"><h3>The problem</h3>
-          <p>The same popular rows and pages are read thousands of times a second. Each read goes to the database, which reads from SSD under load, until the database is the bottleneck.</p></div>
-        <div class="blk"><h3>The fix</h3>
-          <p>Put a cache in front of the database. It can live inside each app process, or be shared, such as Redis or Memcached.</p></div>
-        <div class="blk"><h3>What a request touches</h3>
+          <p>Reads pile up on one database. Some are the same popular rows and pages, read thousands of times a second. Others are all different. Each read goes to the database, which reads from SSD under load, until the database is the bottleneck. There is also only one copy of the data.</p></div>
+        <div class="blk"><h3>Fix 1: a cache</h3>
+          <p>Put a cache in front of the database, either inside each app process or shared, such as Redis or Memcached. A hit never reaches the database.</p>
           <ul>
             <li><b>Hit:</b> app to cache, RAM over one hop of about 0.5 ms.</li>
             <li><b>Miss:</b> app to cache, then to the database and its SSD, then the result is written into the cache. A miss costs more than having no cache.</li>
-          </ul></div>
-        <div class="blk"><h3>The price</h3>
-          <p>A cached value can be out of date, and deciding when to remove it is hard. A very popular entry that expires can send every request to the database at once. Cache patterns and their pitfalls could be a page of their own.</p></div>
-        <p class="pc"><b>Normally:</b> latency over consistency. A hit is fast but may be stale, and the staleness window is how long entries live. <b>During a partition from the database:</b> serve stale data (available) or fail (consistent).</p>
+          </ul>
+          <p><b>Price:</b> a cached value can be out of date, and deciding when to remove it is hard. <a href="cache.html">How caches work and fail &rarr;</a></p>
+          <p class="pc"><b>Normally:</b> latency over consistency. A hit is fast but may be stale, and the staleness window is how long entries live. <b>During a partition from the database:</b> serve stale data (available) or fail (consistent).</p></div>
+        <div class="blk"><h3>Fix 2: read replicas</h3>
+          <p>Add copies of the database that follow the primary. Reads go to the replicas. Writes go to the primary, which ships its log of changes to them.</p>
+          <ul>
+            <li><b>Read:</b> app to a replica, one hop plus RAM or SSD.</li>
+            <li><b>Write:</b> app to the primary, one hop plus an SSD write to its log, then copied to the replicas.</li>
+          </ul>
+          <p><b>Price:</b> with asynchronous copying, replicas lag. A user can save something and then read the old version, and after a failover the newest writes can be lost. With synchronous copying every write waits for a replica to confirm, which is slower.</p>
+          <p class="pc"><b>Normally:</b> asynchronous replication is latency over consistency, and synchronous is the reverse. <b>During a partition:</b> promote a replica (available, but writes may be lost or forked) or stop accepting writes (consistent).</p></div>
+        <div class="blk"><h3>Which to choose</h3>
+          <ul>
+            <li><b>A cache</b> fits when the same few rows or pages are read again and again, some staleness is fine, and you want sub-millisecond reads. A good hit rate removes most of the load. It does not help with a long tail of different queries, and you write the invalidation logic.</li>
+            <li><b>Replicas</b> fit when reads are varied, such as ad hoc queries and reports, or when you cannot accept cache invalidation. Any query can run on a replica, and capacity grows with each copy. A replica can also be promoted if the primary dies, which a cache cannot.</li>
+          </ul>
+          <p>Large systems usually use both: the cache takes the hot reads and the replicas take the rest.</p></div>
       </section>
-
       <section class="screen" data-n="5">
         <h2><span class="rank">5</span>Slow jobs hold requests open</h2>
         <div class="blk"><h3>The problem</h3>
@@ -314,25 +322,8 @@
           <p>"Accepted" and "done" disagree for a while. A job can run twice after a failure, so the work has to be safe to repeat. You also need job status, retries, and a plan for jobs that keep failing.</p></div>
         <p class="pc"><b>Normally:</b> latency over consistency. The reply is instant, but the result is not ready yet. <b>During a partition:</b> the queue can keep accepting work (available) while processing falls behind.</p>
       </section>
-
       <section class="screen" data-n="6">
-        <h2><span class="rank">6</span>The primary database is drowning in reads</h2>
-        <div class="blk"><h3>The problem</h3>
-          <p>Reads still pile up on one database, because the cache helps but misses and rarely used data still land there. Also, there is only one copy of the data.</p></div>
-        <div class="blk"><h3>The fix</h3>
-          <p>Add read replicas, which are copies that follow the primary. Reads go to the replicas. Writes go to the primary, which ships its log of changes to them.</p></div>
-        <div class="blk"><h3>What a request touches</h3>
-          <ul>
-            <li><b>Read:</b> app to a replica, one hop plus RAM or SSD.</li>
-            <li><b>Write:</b> app to the primary, one hop plus an SSD write to its log, then copied to the replicas.</li>
-          </ul></div>
-        <div class="blk"><h3>The price</h3>
-          <p>With asynchronous copying, replicas lag. A user can save something and then read the old version, and after a failover the newest writes can be lost. With synchronous copying every write waits for a replica to confirm, which is slower.</p></div>
-        <p class="pc"><b>Normally:</b> asynchronous replication is latency over consistency, and synchronous is the reverse. <b>During a partition:</b> promote a replica (available, but writes may be lost or forked) or stop accepting writes (consistent).</p>
-      </section>
-
-      <section class="screen" data-n="7">
-        <h2><span class="rank">7</span>One database can't hold the data or the writes</h2>
+        <h2><span class="rank">6</span>One database can't hold the data or the writes</h2>
         <div class="blk"><h3>The problem</h3>
           <p>Replicas do not help here. Every copy holds all the data, and one primary takes all the writes. Once the data outgrows what one machine handles comfortably, or the writes saturate it, you need a different split.</p></div>
         <div class="blk"><h3>The fix</h3>
@@ -343,9 +334,8 @@
           <p>A query or transaction that spans shards needs several hops and coordination. One shard can get hotter than the others, and moving data between shards is hard. If a shard is unreachable, its slice of the data is unavailable.</p></div>
         <p class="pc"><b>Normally:</b> keeping a cross-shard change consistent costs latency, and skipping that costs consistency. <b>During a partition:</b> the unreachable slice is unavailable.</p>
       </section>
-
-      <section class="screen" data-n="8">
-        <h2><span class="rank">8</span>Many teams are blocked on one codebase</h2>
+      <section class="screen" data-n="7">
+        <h2><span class="rank">7</span>Many teams are blocked on one codebase</h2>
         <div class="blk"><h3>The problem</h3>
           <p>One codebase and one release for everyone means teams collide, one bug can take down everything, and parts that need different amounts of capacity scale together.</p></div>
         <div class="blk"><h3>The fix</h3>
@@ -356,9 +346,8 @@
           <p>Latency accumulates, and any one slow service slows the whole request. This fix is as much about organizing teams as about capacity. It adds hops and does not remove load.</p></div>
         <p class="pc"><b>Normally:</b> there is no single transaction across services. Either they agree eventually (a series of steps with an undo for each, so latency and availability win) or they use distributed transactions (consistent, slower). <b>During a partition:</b> a service that cannot reach another degrades or fails that part.</p>
       </section>
-
-      <section class="screen" data-n="9">
-        <h2><span class="rank">9</span>Faraway users pay about 150 ms per round trip</h2>
+      <section class="screen" data-n="8">
+        <h2><span class="rank">8</span>Faraway users pay about 150 ms per round trip</h2>
         <div class="blk"><h3>The problem</h3>
           <p>A user on another continent pays the ocean rung on every round trip, about 150 ms from California to the Netherlands and back. A whole region failing also takes the site down.</p></div>
         <div class="blk"><h3>The fix</h3>
@@ -369,9 +358,8 @@
           <p>You choose between fast writes that regions can disagree about for a while, and consistent writes that wait on a cross-region round trip. Conflicting writes in two regions need a rule for who wins.</p></div>
         <p class="pc"><b>Normally:</b> synchronous agreement across regions is consistent but pays about 150 ms per write. Asynchronous is fast and local, and consistency is the price. <b>During a partition between regions:</b> both sides keep serving (available, and they diverge and reconcile later) or one side stops (consistent). This is the full PACELC choice, and systems differ on where they land. <a class="src" href="https://en.wikipedia.org/wiki/PACELC_design_principle" target="_blank" rel="noopener">source</a></p>
       </section>
-
-      <section class="screen" data-n="10">
-        <h2><span class="rank">10</span>When the best fix is to skip the backend</h2>
+      <section class="screen" data-n="9">
+        <h2><span class="rank">9</span>When the best fix is to skip the backend</h2>
         <div class="blk"><h3>The idea</h3>
           <p>Every fix above makes the backend handle more. The cheapest request is one it never sees. Answer from the CDN, serve pages that were built ahead of time, or run small functions only when a request arrives. Each has its own price, such as staleness at the CDN or a slow first request for a function that has not run recently.</p></div>
         <div class="blk"><h3>The designs side by side</h3>
@@ -382,11 +370,11 @@
               <tr><td>2 Separate database</td><td>One hop per query</td><td>Latency per query</td></tr>
               <tr><td>3 App servers and load balancer</td><td>One extra hop in front</td><td>Shared database, connection limits</td></tr>
               <tr><td>4 Cache</td><td>RAM over one hop</td><td>Stale reads</td></tr>
+              <tr><td>4 Read replicas</td><td>A replica read</td><td>Replication lag</td></tr>
               <tr><td>5 Queue and workers</td><td>A short path; slow work runs elsewhere</td><td>Done later than accepted</td></tr>
-              <tr><td>6 Read replicas</td><td>A replica read</td><td>Replication lag</td></tr>
-              <tr><td>7 Shards</td><td>One hop to the right shard</td><td>Cross-shard work</td></tr>
-              <tr><td>8 Services</td><td>Several hops in a row</td><td>Latency adds up</td></tr>
-              <tr><td>9 Regions</td><td>Local reads; ocean rung for synchronous writes</td><td>Consistency or latency</td></tr>
+              <tr><td>6 Shards</td><td>One hop to the right shard</td><td>Cross-shard work</td></tr>
+              <tr><td>7 Services</td><td>Several hops in a row</td><td>Latency adds up</td></tr>
+              <tr><td>8 Regions</td><td>Local reads; ocean rung for synchronous writes</td><td>Consistency or latency</td></tr>
             </tbody>
           </table></div></div>
       </section>
@@ -419,10 +407,10 @@
         g.classList.toggle("show", on);
         g.classList.toggle("new", on && g.getAttribute("data-new") === String(n));
       });
-      if (prog) prog.textContent = "screen " + n + " of 10";
+      if (prog) prog.textContent = "screen " + n + " of 9";
     }
     show(1);
-    if (!("IntersectionObserver" in window)) { show(10); return; }
+    if (!("IntersectionObserver" in window)) { show(9); return; }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) show(e.target.getAttribute("data-n"));
