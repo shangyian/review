@@ -57,7 +57,15 @@
   .ws .view { display: none; }
   .ws .view.on { display: inline; }
   #stack-ui { padding: 10px 12px; background: var(--track); border-radius: 4px; display: flex; flex-direction: column; gap: 6px; }
-  #stack-ui[hidden] { display: none; }
+  #stack-ui[hidden], #calc-ui[hidden] { display: none; }
+  #calc-ui { padding: 10px 12px; background: var(--track); border-radius: 4px; display: flex; flex-direction: column; gap: 8px; }
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+  .calc-grid label { display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; color: var(--muted); }
+  .calc-grid input { font: inherit; font-size: 0.9375rem; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--fg); width: 100%; box-sizing: border-box; }
+  .calc-grid input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  #calc-note { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+  .ws .big { fill: var(--fg); font: 600 22px var(--mono); }
+  .ws rect.over { fill: var(--ocean); }
   .stack-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   #stack-ui .note { margin: 0; font-size: 0.8125rem; }
   .picker { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
@@ -110,6 +118,22 @@
             <button type="button" data-stack="node" aria-pressed="false">Node</button>
           </div>
           <p id="stack-note" class="note"></p>
+        </div>
+        <div id="calc-ui" hidden>
+          <div class="stack-label">Try the numbers</div>
+          <div class="picker" id="presets" role="group" aria-label="Start from a stack">
+            <button type="button" data-preset="py" aria-pressed="true">Python</button>
+            <button type="button" data-preset="java" aria-pressed="false">Java</button>
+            <button type="button" data-preset="go" aria-pressed="false">Go</button>
+            <button type="button" data-preset="node" aria-pressed="false">Node</button>
+          </div>
+          <div class="calc-grid">
+            <label for="c-inst">Instances<input id="c-inst" type="number" min="0" value="3"></label>
+            <label for="c-proc">Processes per instance<input id="c-proc" type="number" min="0" value="9"></label>
+            <label for="c-pool">Pool size per process<input id="c-pool" type="number" min="0" value="5"></label>
+            <label for="c-limit">Database limit<input id="c-limit" type="number" min="1" value="100"></label>
+          </div>
+          <p id="calc-note"></p>
         </div>
         <svg class="ws" id="ws" viewBox="0 0 520 480" role="img" aria-labelledby="ws-title">
           <title id="ws-title">A web server stack: clients, an optional front door, then an application server with a listener and accept queue, workers, your code, and a database. The workers are drawn differently for each model: pre-fork processes, a thread pool, an event loop, or lightweight threads.</title>
@@ -257,6 +281,29 @@
             <text class="m" x="10" y="428">connections = instances x workers x pool size</text>
             <text class="m" x="10" y="446">The instances can run on one machine or several.</text>
           </g>
+        <g data-s="10">
+            <text class="tb" x="10" y="28">database connections</text>
+            <rect class="ent" x="10" y="50" width="100" height="76" rx="4" style="--c: var(--cpu)"/>
+            <text class="m" x="60" y="70" text-anchor="middle">instances</text><text id="v-inst" class="big" x="60" y="108" text-anchor="middle">3</text>
+            <text class="tb" x="128" y="96" text-anchor="middle">x</text>
+            <rect class="ent" x="146" y="50" width="100" height="76" rx="4" style="--c: var(--cpu)"/>
+            <text class="m" x="196" y="70" text-anchor="middle">processes each</text><text id="v-proc" class="big" x="196" y="108" text-anchor="middle">9</text>
+            <text class="tb" x="264" y="96" text-anchor="middle">x</text>
+            <rect class="ent" x="282" y="50" width="100" height="76" rx="4" style="--c: var(--cpu)"/>
+            <text class="m" x="332" y="70" text-anchor="middle">pool each</text><text id="v-pool" class="big" x="332" y="108" text-anchor="middle">5</text>
+            <text class="tb" x="400" y="96" text-anchor="middle">=</text>
+            <rect class="ent" x="418" y="50" width="92" height="76" rx="4" style="--c: var(--ssd)"/>
+            <text class="m" x="464" y="70" text-anchor="middle">connections</text><text id="v-total" class="big" x="464" y="108" text-anchor="middle">135</text>
+            <text class="m" x="10" y="168">what the database sees, against its limit</text>
+            <rect x="10" y="180" width="500" height="28" rx="3" fill="var(--track)"/>
+            <rect id="bar-fill" x="10" y="180" width="338" height="28" rx="3" fill="var(--hop)"/>
+            <path id="limit-line" d="M260 172V216" stroke="var(--fg)" stroke-width="2" fill="none"/>
+            <text id="limit-label" class="tb" x="260" y="236" text-anchor="middle">limit 100</text>
+            <text id="bar-note" class="m" x="10" y="270">135 connections, 35 over the limit</text>
+            <text class="m" x="10" y="310">The bar runs from 0 to twice the limit.</text>
+            <text class="m" x="10" y="326">Over the limit, new connections can't be opened,</text>
+            <text class="m" x="10" y="342">so some requests wait or fail.</text>
+          </g>
         </svg>
         <figcaption>One drawing for the whole page. The part you are reading about is outlined, and the workers change to match the model.</figcaption>
       </figure>
@@ -403,6 +450,26 @@
             <li>Database connections add up: instances × workers × pool size. Postgres, for example, defaults to about 100 connections, so a few busy servers can exceed it. <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a></li>
             <li>The model decides what a waiting request costs and which rules your code must follow, such as thread safety or never blocking.</li>
           </ul></div>
+      </section>
+
+      <section class="screen" data-n="10">
+        <h2><span class="rank">10</span>How many database connections do you really use?</h2>
+        <div class="blk"><h3>The arithmetic</h3>
+          <p>The database sees instances × processes per instance × pool size per process. Each process holds its own pool, so the number multiplies quickly, and it is easy to pass the database's limit without noticing. Postgres, for example, defaults to about 100. <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a></p>
+          <p>Use the numbers under the diagram. The preset buttons fill in a typical setup for each stack.</p></div>
+        <div class="blk"><h3>Where the numbers come from</h3>
+          <ul>
+            <li><b>Python:</b> gunicorn suggests starting with (2 × cores) + 1 workers, which is 9 on four cores. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a> SQLAlchemy's default pool keeps 5 connections and allows 10 more under load, so up to 15 per process. The pool belongs to the engine, and connections are not shared with a forked process, so every worker has its own. <a class="src" href="https://docs.sqlalchemy.org/en/20/core/pooling.html" target="_blank" rel="noopener">source</a></li>
+            <li><b>Java:</b> Spring Boot prefers the HikariCP pool when it is available, and the starters bring it in. <a class="src" href="https://docs.spring.io/spring-boot/reference/data/sql.html" target="_blank" rel="noopener">source</a> Its default maximum pool size is 10. When the pool is full, a request blocks until a connection frees up or a timeout passes. <a class="src" href="https://github.com/brettwooldridge/HikariCP" target="_blank" rel="noopener">source</a> One process, so one pool shared by all its request threads.</li>
+            <li><b>Go:</b> the standard database package has no limit on open connections by default, and keeps 2 idle ones. You set the limit yourself, and the 10 in the preset is a number you would choose. <a class="src" href="https://pkg.go.dev/database/sql#DB.SetMaxOpenConns" target="_blank" rel="noopener">source</a></li>
+            <li><b>Node:</b> the node-postgres pool defaults to a maximum of 10 clients. <a class="src" href="https://node-postgres.com/apis/pool" target="_blank" rel="noopener">source</a> With cluster mode, each worker is its own process with its own memory, so each has its own pool. <a class="src" href="https://nodejs.org/api/cluster.html" target="_blank" rel="noopener">source</a> The preset assumes four workers.</li>
+          </ul></div>
+        <div class="blk"><h3>When the total is too big</h3>
+          <ul>
+            <li>Make each pool smaller. HikariCP's README argues that databases need fewer connections than people usually configure, and that too many hurt performance. <a class="src" href="https://github.com/brettwooldridge/HikariCP" target="_blank" rel="noopener">source</a></li>
+            <li>Run fewer workers or instances.</li>
+            <li>Put a connection pooler between the app and the database, so many app-side connections share a few database connections.</li>
+          </ul></div>
         <div class="blk"><h3>Questions to ask of any server</h3>
           <ul>
             <li>What carries a waiting request: a process, a thread, or a paused task?</li>
@@ -422,6 +489,7 @@
       <li>Spring Boot, <a href="https://docs.spring.io/spring-boot/reference/web/servlet.html" target="_blank" rel="noopener">servlet web applications</a>: embedded Tomcat and Jetty.</li>
       <li>Node.js, <a href="https://nodejs.org/api/cluster.html" target="_blank" rel="noopener">cluster</a>. Express, <a href="https://expressjs.com/" target="_blank" rel="noopener">homepage</a>.</li>
       <li>Apache Tomcat, <a href="https://tomcat.apache.org/tomcat-10.1-doc/proxy-howto.html" target="_blank" rel="noopener">proxy support</a>: Apache httpd in front of Tomcat with mod_proxy.</li>
+      <li>Go, <a href="https://pkg.go.dev/database/sql#DB.SetMaxOpenConns" target="_blank" rel="noopener">database/sql</a>: connection limits. HikariCP, <a href="https://github.com/brettwooldridge/HikariCP" target="_blank" rel="noopener">README</a>: pool size default. Spring Boot, <a href="https://docs.spring.io/spring-boot/reference/data/sql.html" target="_blank" rel="noopener">SQL data access</a>: default pool. SQLAlchemy, <a href="https://docs.sqlalchemy.org/en/20/core/pooling.html" target="_blank" rel="noopener">connection pooling</a>. node-postgres, <a href="https://node-postgres.com/apis/pool" target="_blank" rel="noopener">pool</a>.</li>
       <li>nginx, <a href="https://nginx.org/en/docs/http/load_balancing.html" target="_blank" rel="noopener">HTTP load balancing</a>: upstream groups, round-robin by default.</li>
       <li>Gunicorn, <a href="https://gunicorn.org/design/" target="_blank" rel="noopener">design</a>: worker types, keep-alive, worker count, buffering proxy.</li>
       <li>nginx, <a href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">Inside NGINX</a>: event-driven design, one worker per core.</li>
@@ -494,6 +562,7 @@
     function show(n) {
       n = String(n); current = Number(n);
       if (ui) ui.hidden = n !== "2";
+      var cui = document.getElementById("calc-ui"); if (cui) cui.hidden = n !== "10";
       groups.forEach(function (g) {
         g.classList.toggle("show", g.getAttribute("data-s").split(" ").indexOf(n) > -1);
       });
@@ -504,13 +573,44 @@
       });
     }
 
+
+    var PRESETS = {
+      py:   { inst: 3, proc: 9, pool: 5,  limit: 100, note: "gunicorn on four cores: (2 x 4) + 1 = 9 workers. SQLAlchemy default pool: 5, up to 15 with overflow." },
+      java: { inst: 3, proc: 1, pool: 10, limit: 100, note: "One JVM per instance. HikariCP default maximum pool size: 10." },
+      go:   { inst: 3, proc: 1, pool: 10, limit: 100, note: "One process per instance. Go has no default limit, so 10 is a chosen number." },
+      node: { inst: 3, proc: 4, pool: 10, limit: 100, note: "Four cluster workers per instance. node-postgres default pool: 10." }
+    };
+    function num(id) { var e = document.getElementById(id); var v = e ? parseInt(e.value, 10) : 0; return isNaN(v) || v < 0 ? 0 : v; }
+    function calc() {
+      var inst = num("c-inst"), proc = num("c-proc"), pool = num("c-pool"), limit = Math.max(num("c-limit"), 1);
+      var total = inst * proc * pool;
+      function t(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+      t("v-inst", inst); t("v-proc", proc); t("v-pool", pool); t("v-total", total); t("limit-label", "limit " + limit);
+      var w = Math.min(total / (2 * limit), 1) * 500;
+      var f = document.getElementById("bar-fill");
+      if (f) { f.setAttribute("width", w); f.setAttribute("fill", total > limit ? "var(--ocean)" : "var(--hop)"); }
+      t("bar-note", total > limit ? total + " connections, " + (total - limit) + " over the limit" : total + " of " + limit + " connections, " + (limit - total) + " to spare");
+    }
+    function setPreset(k) {
+      var d = PRESETS[k]; if (!d) return;
+      document.getElementById("c-inst").value = d.inst; document.getElementById("c-proc").value = d.proc;
+      document.getElementById("c-pool").value = d.pool; document.getElementById("c-limit").value = d.limit;
+      var n = document.getElementById("calc-note"); if (n) n.textContent = d.note;
+      document.querySelectorAll("#presets button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-preset") === k)); });
+      calc();
+    }
+    var presets = document.getElementById("presets");
+    if (presets) presets.addEventListener("click", function (e) { var b = e.target.closest("button[data-preset]"); if (b) setPreset(b.getAttribute("data-preset")); });
+    ["c-inst", "c-proc", "c-pool", "c-limit"].forEach(function (id) { var e = document.getElementById(id); if (e) e.addEventListener("input", calc); });
+    setPreset("py");
+
     var picker = document.getElementById("picker");
     if (picker) picker.addEventListener("click", function (e) {
       var b = e.target.closest("button[data-stack]"); if (b) setPick(b.getAttribute("data-stack"));
     });
     setPick("py-sync");
     show(1);
-    if (!("IntersectionObserver" in window)) { show(9); return; }
+    if (!("IntersectionObserver" in window)) { show(10); return; }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) show(e.target.getAttribute("data-n"));
