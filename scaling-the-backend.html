@@ -293,8 +293,7 @@
             <li><b>Hit:</b> app to cache, RAM over one hop of about 0.5 ms.</li>
             <li><b>Miss:</b> app to cache, then to the database and its SSD, then the result is written into the cache. A miss costs more than having no cache.</li>
           </ul>
-          <p><b>Price:</b> a cached value can be out of date, and deciding when to remove it is hard. <a href="cache.html">How caches work and fail &rarr;</a></p>
-          <p class="pc"><b>Normally:</b> latency over consistency. A hit is fast but may be stale, and the staleness window is how long entries live. <b>During a partition from the database:</b> serve stale data (available) or fail (consistent).</p></div>
+          <p><b>Price:</b> a cached value can be out of date, and deciding when to remove it is hard. <a href="cache.html">How caches work and fail &rarr;</a></p></div>
         <div class="blk"><h3>Fix 2: read replicas</h3>
           <p>Add copies of the database that follow the primary. Reads go to the replicas. Writes go to the primary, which ships its log of changes to them.</p>
           <ul>
