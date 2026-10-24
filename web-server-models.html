@@ -106,9 +106,18 @@
           </g>
           <g data-s="1 2 3 4 5 6 7 8 9" style="--c: var(--hop)">
             <rect class="ent" x="10" y="250" width="90" height="60" rx="4"/>
+            <path class="ln" d="M100 280H168" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="1 2 3 4 5 6 7 8">
             <text class="tb" x="55" y="276" text-anchor="middle">listener</text>
             <text class="m" x="55" y="293" text-anchor="middle">accept queue</text>
-            <path class="ln" d="M100 280H168" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="9">
+            <text class="tb" x="55" y="276" text-anchor="middle">gunicorn's</text>
+            <text class="m" x="55" y="293" text-anchor="middle">listener</text>
+            <text class="m" x="62" y="116">connection 1</text>
+            <text class="m" x="62" y="214">connection 2</text>
+            <text class="m" x="62" y="228">often a Unix socket</text>
           </g>
           <g data-s="1 2 3 4 5 6 7 8 9" style="--c: var(--ssd)">
             <rect class="ent" x="170" y="530" width="340" height="50" rx="4"/>
@@ -238,7 +247,7 @@
         <div class="blk"><h3>The problem</h3>
           <p>A web server handles many clients at the same time. For each request, your handler does a few milliseconds of real work and then waits, usually for a database. A server that does one thing at a time would spend nearly all its time idle.</p></div>
         <div class="blk"><h3>The shape</h3>
-          <p>A listener accepts connections. The operating system finishes each TCP handshake itself and queues the finished connections until the server takes one. Workers take requests from there and run your handler, which talks to the database.</p></div>
+          <p>A listener accepts connections. For whichever program is listening, whether that is nginx or the app server on its own, the operating system finishes each TCP handshake and queues the finished connections until the program takes one. Workers take requests from there and run your handler, which talks to the database.</p></div>
         <div class="blk"><h3>The question</h3>
           <p>How many requests can be in progress at once, and what does each waiting request cost? That sets the capacity. By Little's law, the number of requests in progress equals the arrival rate times the time each one takes. <a class="src" href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">source</a></p>
           <p>The rest of the page is about the different answers servers give.</p></div>
@@ -360,7 +369,8 @@
       <section class="screen" data-n="9">
         <h2><span class="rank">9</span>Putting it together</h2>
         <div class="blk"><h3>A typical Python setup</h3>
-          <p>nginx in front, gunicorn behind it. nginx handles the secure handshake and slow clients, and hands whole requests to gunicorn's workers over a fast local connection. Inside each worker you pick the model that fits your code. gunicorn's docs suggest sync for a simple app behind nginx, gthread when you need keep-alive or moderate concurrency, and gevent or an ASGI worker for WebSockets, streaming or async frameworks. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></p></div>
+          <p>nginx in front, gunicorn behind it. nginx handles the secure handshake and slow clients, and hands whole requests to gunicorn's workers over a fast local connection. Inside each worker you pick the model that fits your code. gunicorn's docs suggest sync for a simple app behind nginx, gthread when you need keep-alive or moderate concurrency, and gevent or an ASGI worker for WebSockets, streaming or async frameworks. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></p>
+          <p>There are two separate connections. The client connects to nginx. The operating system completes that TCP handshake, and then nginx does the TLS handshake. nginx then opens a second connection to gunicorn. That one is often a Unix domain socket, a link between two programs on the same machine addressed by a file path, which needs no TCP handshake at all. It can also be a local TCP port, where the handshake is fast. gunicorn only ever talks to nginx.</p></div>
         <div class="blk"><h3>What stays true in every model</h3>
           <ul>
             <li>Capacity is concurrency divided by time per request, so a slow dependency lowers capacity.</li>
