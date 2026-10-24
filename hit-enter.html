@@ -44,6 +44,8 @@
   .fl .tb { fill: var(--fg); font: 600 11px var(--mono); }
   .fl .m { fill: var(--muted); font: 10px var(--mono); }
   .fl .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  .fl a { cursor: pointer; }
+  .fl a:hover text.hint { fill: var(--fg); text-decoration: underline; }
   .fl .chip { fill: var(--track); stroke: var(--rule); }
   .fl rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
   .fl [data-id] { transition: opacity 0.25s; }
@@ -88,7 +90,7 @@
     <aside>
       <figure>
         <svg class="fl" id="flow" viewBox="0 0 520 726" role="img" aria-labelledby="fl-title">
-          <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge with the TCP, TLS and HTTP messages exchanged with the browser and a dashed HTTP/3 alternative, and the backend server with its load balancer, app, cache and database.</title>
+          <title id="fl-title">Map of the components in a page load: you, the browser, its HSTS list, HTTP cache (memory then disk) and DNS caches, then over the internet the DNS resolver and authoritative servers, the CDN edge with the TCP, TLS and HTTP messages exchanged with the browser and a dashed HTTP/3 alternative, and the backend with its load balancer, app, cache and database.</title>
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
               <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
@@ -189,9 +191,11 @@
           <g class="arrowg" data-id="l-eo-req"><path class="ln" d="M320 586V620" marker-end="url(#ah)"/><text class="m" x="312" y="607" text-anchor="end">7  request</text></g>
           <g class="arrowg" data-id="l-eo-res"><path class="ln" d="M360 620V588" marker-end="url(#ah)"/><text class="m" x="366" y="607">back, copy stored</text></g>
 
+          <a href="scaling-the-backend.html">
           <g data-id="origin" style="--c: var(--origin)">
             <rect class="ent" x="104" y="620" width="300" height="96" rx="5"/>
-            <text class="tb" x="114" y="638">Backend server</text>
+            <text class="tb" x="114" y="638">Backend</text>
+            <text class="m hint" x="396" y="638" text-anchor="end">how it scales →</text>
           </g>
           <g data-id="lb" style="--c: var(--origin)">
             <rect class="ent" x="112" y="648" width="64" height="52" rx="4"/>
@@ -213,8 +217,9 @@
             <text class="tb" x="359" y="670" text-anchor="middle">database</text>
             <text class="m" x="359" y="684" text-anchor="middle">on SSD</text>
           </g>
+          </a>
         </svg>
-        <figcaption>Assumes a first visit, a user near a CDN edge, and a backend server in another region. Times are rough. The boxes and lines for the step you are reading stay lit.</figcaption>
+        <figcaption>Assumes a first visit, a user near a CDN edge, and a backend in another region. Times are rough. The boxes and lines for the step you are reading stay lit.</figcaption>
       </figure>
     </aside>
 
@@ -325,7 +330,7 @@
           </div>
           <div>
             <h3>Why it is there</h3>
-            <p>This is what a CDN is for. Most requests are answered from nearby, and never cross to the backend server.</p>
+            <p>This is what a CDN is for. Most requests are answered from nearby, and never cross to the backend.</p>
           </div>
         </div>
         <p class="next"><b>Feeds step 9</b> on a hit, skipping steps 7 and 8. <b>Feeds step 7</b> on a miss.</p>
@@ -333,16 +338,16 @@
 
       <section class="step" data-step="7" style="--c: var(--far)">
         <h2><span class="rank">7</span>Edge to backend <span class="fig">1 round trip, ~50 to 150 ms</span></h2>
-        <p class="gets"><b>You get</b> the page from the backend server, when the edge did not have it.</p>
+        <p class="gets"><b>You get</b> the page from the backend, when the edge did not have it.</p>
         <div class="cols">
           <div>
             <h3>What happens</h3>
-            <p>The edge belongs to the CDN company, which runs servers in many cities. The site owner points the site's DNS name at the CDN, tells it where the backend server is (CDN documentation calls this the origin), and sets caching rules. The CDN mostly follows the <code>Cache-Control</code> headers the backend server sends.</p>
-            <p>On a miss, the edge acts as a proxy. It sends the request to the backend server, which sees the edge as its client. CDNs usually keep connections to the backend server open, so this costs one round trip and not a fresh TCP and TLS setup. Details differ between CDNs.</p>
+            <p>The edge belongs to the CDN company, which runs servers in many cities. The site owner points the site's DNS name at the CDN, tells it where the backend is (CDN documentation calls this the origin), and sets caching rules. The CDN mostly follows the <code>Cache-Control</code> headers the backend sends.</p>
+            <p>On a miss, the edge acts as a proxy. It sends the request to the backend, which sees the edge as its client. CDNs usually keep connections to the backend open, so this costs one round trip and not a fresh TCP and TLS setup. Details differ between CDNs.</p>
           </div>
           <div>
             <h3>Why it is there</h3>
-            <p>Someone has to hold the real data. This is often the longest single trip of the whole story, because the backend server may be in another region or on another continent.</p>
+            <p>Someone has to hold the real data. This is often the longest single trip of the whole story, because the backend may be in another region or on another continent.</p>
             <p>The secure connection from step 5 ended at the edge. The edge to backend connection is a separate one. Many CDNs also add a regional cache between the two, so a miss in one city can be filled nearby. How that works depends on the CDN.</p>
             <p>Pages that differ for each user usually cannot be cached, so they miss every time. The CDN still helps, because your handshakes happen over the short path to the edge.</p>
           </div>
@@ -458,5 +463,5 @@
     })();
   </script>
 
-  <p class="note"><b>Reading the numbers:</b> every time is a rough, typical figure for a first visit. Round trips over the public internet are 20 ms or more each, so the count of sequential round trips matters more than anything that happens inside the backend server.</p>
+  <p class="note"><b>Reading the numbers:</b> every time is a rough, typical figure for a first visit. Round trips over the public internet are 20 ms or more each, so the count of sequential round trips matters more than anything that happens inside the backend.</p>
 </main>

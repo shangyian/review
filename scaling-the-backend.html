@@ -1,0 +1,422 @@
+<title>Scaling the Backend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: a sticky diagram that gains one box per screen; the problem, fix and price for each screen scroll on the right. */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --track: #E6EAF0; --rule: #CBD3DD;
+    --cpu: #8DB8E8; --ram: #6A9FDB; --ssd: #4A85CB; --hop: #2F6BB5; --ocean: #123A78;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+      --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+    --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .back { font-size: 0.875rem; color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 12px; }
+  .back:hover { text-decoration: underline; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
+  a { color: inherit; }
+  a.src { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+
+  .pacelc { margin: 0; padding: 12px 14px; background: var(--track); border-radius: 4px; max-width: 70ch; font-size: 0.9375rem; }
+  .pacelc b { font-weight: 600; }
+
+  .layout { display: grid; grid-template-columns: 480px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .layout aside { position: sticky; top: 16px; }
+  .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .layout figcaption { font-size: 0.75rem; color: var(--muted); }
+  .layout svg { width: 100%; max-height: calc(100vh - 90px); }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout aside { position: static; max-width: 520px; }
+    .layout svg { max-height: none; }
+  }
+
+  .bk .t { fill: var(--fg); font: 11px var(--mono); }
+  .bk .tb { fill: var(--fg); font: 600 11px var(--mono); }
+  .bk .m { fill: var(--muted); font: 10px var(--mono); }
+  .bk .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  .bk .dash { stroke-dasharray: 5 4; }
+  .bk rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
+  .bk rect.frame { fill: none; stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 5 4; }
+  .bk g[data-s] { opacity: 0; transition: opacity 0.3s; }
+  .bk g[data-s].show { opacity: 1; }
+  .bk g.show.new rect.ent { fill: var(--track); stroke-width: 3; }
+  .bk g.show.new path.ln { stroke: var(--fg); stroke-width: 1.75; }
+  @media (prefers-reduced-motion: reduce) { .bk g[data-s] { transition: none; } }
+
+  .stack { display: flex; flex-direction: column; min-width: 0; }
+  .screen { display: flex; flex-direction: column; gap: 12px; padding-block: 28px; border-top: 1px solid var(--rule); min-height: 60vh; }
+  .screen:first-child { border-top: 0; padding-top: 0; }
+  .screen h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .screen h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .blk h3 { margin: 0 0 2px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .blk p { margin: 0 0 6px; max-width: 66ch; }
+  .blk ul { margin: 0 0 6px; padding-left: 1.1em; max-width: 66ch; display: flex; flex-direction: column; gap: 4px; }
+  .blk code { font-family: var(--mono); font-size: 0.875em; }
+  .pc { margin: 0; padding: 10px 12px; background: var(--track); border-radius: 4px; font-size: 0.9375rem; max-width: 66ch; }
+  .pc b { font-weight: 600; }
+
+  table { border-collapse: collapse; font-size: 0.875rem; min-width: 560px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .tablewrap { overflow-x: auto; }
+
+  .sources { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.875rem; color: var(--muted); max-width: 72ch; }
+  .sources h2 { font-size: 1rem; margin: 0 0 8px; color: var(--fg); }
+  .sources ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+  .note { color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
+</style>
+
+<main class="wrap">
+  <header>
+    <a class="back" href="hit-enter.html">&larr; Anatomy of a Page Load</a>
+    <h1>Scaling the Backend</h1>
+    <p class="lede">A request has just reached the backend. This page grows a backend one problem at a time. Each screen starts with what hurts, adds one fix, and says what the fix costs. Where there are several copies of the data, the cost is usually consistency, and PACELC is the name for how that cost is paid.</p>
+  </header>
+
+  <p class="pacelc"><b>PACELC:</b> if there is a network <b>P</b>artition, a system must choose <b>A</b>vailability or <b>C</b>onsistency. <b>E</b>lse, in normal operation, it must choose <b>L</b>atency or <b>C</b>onsistency. <a class="src" href="https://en.wikipedia.org/wiki/PACELC_design_principle" target="_blank" rel="noopener">source</a></p>
+
+  <div class="layout">
+    <aside>
+      <figure>
+        <svg class="bk" id="bk" viewBox="0 0 520 620" role="img" aria-labelledby="bk-title">
+          <title id="bk-title">A backend that gains components as it scales: one machine, then a separate database, a load balancer with several app servers, a cache, a queue with workers, read replicas, shards, services, and a second region.</title>
+          <defs>
+            <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
+            </marker>
+            <marker id="aho" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="var(--ocean)"/>
+            </marker>
+          </defs>
+          <text class="m" id="prog" x="10" y="16">screen 1 of 10</text>
+
+          <!-- requests arriving from the edge -->
+          <g data-s="1 2"><path class="ln" d="M215 24V148" marker-end="url(#ah)"/><text class="m" x="222" y="40">from the CDN edge</text></g>
+          <g data-s="3 4 5 6 7 8 9 10"><path class="ln" d="M215 24V58" marker-end="url(#ah)"/><text class="m" x="222" y="40">from the CDN edge</text></g>
+
+          <!-- screen 1: everything on one machine -->
+          <g data-s="1" data-new="1" style="--c: var(--cpu)">
+            <rect class="ent" x="140" y="150" width="150" height="270" rx="6"/>
+            <text class="tb" x="150" y="168">one machine</text>
+            <rect class="ent" x="150" y="178" width="130" height="46" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="215" y="205" text-anchor="middle">app</text>
+            <path class="ln" d="M215 224V336" marker-end="url(#ah)"/>
+            <text class="m" x="222" y="276">RAM, then SSD</text>
+            <rect class="ent" x="150" y="340" width="130" height="64" rx="4" style="--c: var(--ssd)"/>
+            <text class="tb" x="215" y="366" text-anchor="middle">database</text>
+            <text class="m" x="215" y="382" text-anchor="middle">on SSD</text>
+          </g>
+
+          <!-- screen 2: database on its own machine -->
+          <g data-s="2 3 4 5 6 7 8 9 10" data-new="2" style="--c: var(--cpu)">
+            <rect class="ent" x="170" y="150" width="90" height="46" rx="4"/>
+          </g>
+          <g data-s="2" data-new="2"><path class="ln" d="M215 196V338" marker-end="url(#ah)"/><text class="m" x="222" y="270">0.5 ms hop</text></g>
+          <g data-s="2 3 4 5 6" data-new="2" style="--c: var(--ssd)">
+            <rect class="ent" x="165" y="340" width="100" height="56" rx="4"/>
+            <text class="tb" x="215" y="364" text-anchor="middle">database</text>
+            <text class="m" x="215" y="380" text-anchor="middle">on SSD</text>
+          </g>
+          <g data-s="2 3 4 5 6 7"><text class="tb" x="215" y="177" text-anchor="middle">app</text></g>
+
+          <!-- screen 3: load balancer and several app servers -->
+          <g data-s="3 4 5 6 7 8 9 10" data-new="3" style="--c: var(--cpu)">
+            <rect class="ent" x="155" y="60" width="120" height="40" rx="4"/>
+            <text class="tb" x="215" y="84" text-anchor="middle">load balancer</text>
+            <rect class="ent" x="60" y="150" width="90" height="46" rx="4"/>
+            <rect class="ent" x="280" y="150" width="90" height="46" rx="4"/>
+            <path class="ln" d="M215 100V118"/><path class="ln" d="M105 118H325"/><path class="ln" d="M105 118V148" marker-end="url(#ah)"/><path class="ln" d="M215 118V148" marker-end="url(#ah)"/><path class="ln" d="M325 118V148" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="3 4 5 6 7"><text class="tb" x="105" y="177" text-anchor="middle">app</text><text class="tb" x="325" y="177" text-anchor="middle">app</text></g>
+          <g data-s="3 4 5 6 7 8 9 10"><path class="ln" d="M105 196V226H325V196"/><path class="ln" d="M215 196V226"/></g>
+          <g data-s="3 4 5 6"><path class="ln" d="M215 226V338" marker-end="url(#ah)"/><text class="m" x="222" y="290">0.5 ms hop</text></g>
+
+          <!-- screen 4: cache -->
+          <g data-s="4 5 6 7 8 9 10" data-new="4" style="--c: var(--ram)">
+            <rect class="ent" x="8" y="262" width="90" height="48" rx="4"/>
+            <text class="tb" x="53" y="283" text-anchor="middle">cache</text>
+            <text class="m" x="53" y="298" text-anchor="middle">in RAM</text>
+            <path class="ln" d="M105 226H53V260" marker-end="url(#ah)"/>
+            <text class="m" x="58" y="248">hit</text>
+          </g>
+          <g data-s="4 5 6" data-new="4"><path class="ln dash" d="M98 290H140V368H163" marker-end="url(#ah)"/><text class="m" x="104" y="318">miss</text></g>
+
+          <!-- screen 5: queue and workers -->
+          <g data-s="5 6 7 8 9 10" data-new="5" style="--c: var(--ssd)">
+            <rect class="ent" x="410" y="150" width="100" height="44" rx="4"/>
+            <text class="tb" x="460" y="170" text-anchor="middle">queue</text>
+            <text class="m" x="460" y="184" text-anchor="middle">durable</text>
+            <path class="ln" d="M370 173H408" marker-end="url(#ah)"/>
+            <path class="ln" d="M460 194V228" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="5 6 7 8 9 10" data-new="5" style="--c: var(--cpu)">
+            <rect class="ent" x="410" y="230" width="100" height="44" rx="4"/>
+            <text class="tb" x="460" y="250" text-anchor="middle">workers</text>
+            <text class="m" x="460" y="264" text-anchor="middle">slow jobs</text>
+          </g>
+          <g data-s="5 6"><path class="ln dash" d="M410 258H300V368H267" marker-end="url(#ah)"/></g>
+
+          <!-- screen 6: read replicas -->
+          <g data-s="6" data-new="6" style="--c: var(--ssd)">
+            <rect class="ent" x="115" y="432" width="90" height="44" rx="4"/>
+            <text class="tb" x="160" y="452" text-anchor="middle">replica</text>
+            <text class="m" x="160" y="466" text-anchor="middle">reads</text>
+            <rect class="ent" x="225" y="432" width="90" height="44" rx="4"/>
+            <text class="tb" x="270" y="452" text-anchor="middle">replica</text>
+            <text class="m" x="270" y="466" text-anchor="middle">reads</text>
+            <path class="ln" d="M215 396V414"/><path class="ln" d="M160 414H270"/><path class="ln" d="M160 414V430" marker-end="url(#ah)"/><path class="ln" d="M270 414V430" marker-end="url(#ah)"/>
+            <text class="m" x="222" y="410">copies the log</text>
+          </g>
+
+          <!-- screen 7: shards -->
+          <g data-s="7 8 9 10" data-new="7" style="--c: var(--ssd)">
+            <path class="ln" d="M215 226V316"/><path class="ln" d="M105 316H325"/><path class="ln" d="M105 316V338" marker-end="url(#ah)"/><path class="ln" d="M215 316V338" marker-end="url(#ah)"/><path class="ln" d="M325 316V338" marker-end="url(#ah)"/>
+            <text class="m" x="222" y="300">route by key</text>
+            <rect class="ent" x="60" y="340" width="90" height="56" rx="4"/>
+            <text class="tb" x="105" y="364" text-anchor="middle">shard A</text>
+            <text class="m" x="105" y="380" text-anchor="middle">own copies</text>
+            <rect class="ent" x="170" y="340" width="90" height="56" rx="4"/>
+            <text class="tb" x="215" y="364" text-anchor="middle">shard B</text>
+            <text class="m" x="215" y="380" text-anchor="middle">own copies</text>
+            <rect class="ent" x="280" y="340" width="90" height="56" rx="4"/>
+            <text class="tb" x="325" y="364" text-anchor="middle">shard C</text>
+            <text class="m" x="325" y="380" text-anchor="middle">own copies</text>
+          </g>
+          <g data-s="7 8 9 10"><path class="ln dash" d="M53 310V368H58" marker-end="url(#ah)"/><path class="ln dash" d="M410 258H390V368H372" marker-end="url(#ah)"/></g>
+
+          <!-- screen 8: services -->
+          <g data-s="8 9 10" data-new="8">
+            <text class="tb" x="105" y="177" text-anchor="middle">users</text>
+            <text class="tb" x="215" y="177" text-anchor="middle">orders</text>
+            <text class="tb" x="325" y="177" text-anchor="middle">payments</text>
+            <path class="ln" d="M150 173H168" marker-end="url(#ah)"/><path class="ln" d="M260 173H278" marker-end="url(#ah)"/>
+            <text class="m" x="222" y="214">each call is a hop</text>
+          </g>
+
+          <!-- screen 9: second region -->
+          <g data-s="9 10" data-new="9" style="--c: var(--ocean)">
+            <rect class="frame" x="2" y="28" width="516" height="388" rx="8"/>
+            <text class="m" x="10" y="44">region 1</text>
+            <path d="M215 400V498" stroke="var(--ocean)" stroke-width="1.75" fill="none" stroke-dasharray="5 4" marker-end="url(#aho)"/>
+            <text class="tb" x="222" y="470">~150 ms</text>
+            <rect class="ent" x="60" y="500" width="310" height="100" rx="6"/>
+            <text class="tb" x="70" y="518">region 2</text>
+            <rect class="ent" x="72" y="530" width="80" height="48" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="112" y="558" text-anchor="middle">app</text>
+            <rect class="ent" x="160" y="530" width="60" height="48" rx="4" style="--c: var(--ram)"/>
+            <text class="tb" x="190" y="558" text-anchor="middle">cache</text>
+            <rect class="ent" x="228" y="530" width="130" height="48" rx="4" style="--c: var(--ssd)"/>
+            <text class="tb" x="293" y="558" text-anchor="middle">database copy</text>
+          </g>
+        </svg>
+        <figcaption>The diagram gains one box per screen. Dashed lines are the less common path, such as a cache miss.</figcaption>
+      </figure>
+    </aside>
+
+    <div class="stack">
+
+      <section class="screen" data-n="1">
+        <h2><span class="rank">1</span>Everything on one machine</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>None yet. This is a new site with a few requests a second and a small amount of data. It is the baseline the rest of the page builds on.</p></div>
+        <div class="blk"><h3>What it is</h3>
+          <p>One machine runs the app and the database.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>CPU, then RAM (the operating system's cache and the database's own cache), then SSD on a miss. No network hops.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>It is simple and fast, and consistency is free because there is only one copy to disagree with. But it is one point of failure. While the machine is down, so is the site. The data survives a crash because it is on SSD, but it is lost if the disk is, unless it was backed up.</p>
+          <p>Many sites never need more. Add a piece only when a measured problem calls for it.</p></div>
+      </section>
+
+      <section class="screen" data-n="2">
+        <h2><span class="rank">2</span>The app and the database compete for one machine</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>A heavy query slows page rendering, and a busy app slows the database, because both use the same CPU and memory. You also cannot size them separately.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Move the database to its own machine.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>CPU, then a network hop of about 0.5 ms for each query, then the database's RAM or SSD. A page that runs ten queries one after another pays about 5 ms in hops alone.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>A hop on every query, and code that queries in a loop gets expensive. There is still one copy of the data, so there are no stale reads. If the network between the two breaks, the app cannot answer. It fails rather than guess.</p></div>
+      </section>
+
+      <section class="screen" data-n="3">
+        <h2><span class="rank">3</span>One app server is the limit, and a single point of failure</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>The app server's CPU is maxed out, requests queue and latency climbs. If it dies, the site is down.</p>
+          <p>To see why, look at how many requests one server can take at once. Each client connection is state the operating system keeps in memory, reached by the server program through a file descriptor. A typical Python setup puts nginx in front of gunicorn:</p>
+          <ul>
+            <li>nginx is a reverse proxy. It handles the secure handshake, serves static files, and holds the slow client connections. It is event-driven, with about one worker process per core, so each connection costs a file descriptor and a little memory, not a thread. <a class="src" href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">source</a> Its own limit is set by <code>worker_connections</code> (default 512 per worker) and the open-file limit. <a class="src" href="https://nginx.org/en/docs/ngx_core_module.html#worker_connections" target="_blank" rel="noopener">source</a></li>
+            <li>gunicorn runs your Python code in a few worker processes. The default sync worker handles one request at a time and has no keep-alive, and the docs say it needs a buffering proxy such as nginx in production. They suggest starting at (2 × cores) + 1 workers. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></li>
+          </ul>
+          <p>So application concurrency is the number of workers, not the number of open sockets. With Little's law, concurrent requests = arrival rate × time per request. <a class="src" href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">source</a> Rearranged, 8 workers at 100 ms per request handle about 80 requests per second. If a slow database makes each request take 1 s, the same workers handle about 8. A latency problem turns into a capacity problem.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Run several app servers behind a load balancer. Clients need one address, and something has to spread the requests and skip a server that is down.</p>
+          <p>The app servers must be stateless, so any of them can handle any request. A session kept in one server's memory would vanish when the next request lands on another, so that state moves to a shared place such as the database or a cache.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>One more hop of about 0.5 ms at the front, then an app server, then the database.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>The database is now shared by every worker, and connections to it are limited. Postgres, for example, defaults to about 100 connections <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a> and runs one process per connection. <a class="src" href="https://www.postgresql.org/docs/current/connect-estab.html" target="_blank" rel="noopener">source</a> Twenty servers × 8 workers × 2 connections each is 320, well above 100, so a connection pooler usually sits in front. The load balancer must also not become the new single point of failure, so it needs a backup.</p></div>
+      </section>
+
+      <section class="screen" data-n="4">
+        <h2><span class="rank">4</span>The same reads hit SSD again and again</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>The same popular rows and pages are read thousands of times a second. Each read goes to the database, which reads from SSD under load, until the database is the bottleneck.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Put a cache in front of the database. It can live inside each app process, or be shared, such as Redis or Memcached.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <ul>
+            <li><b>Hit:</b> app to cache, RAM over one hop of about 0.5 ms.</li>
+            <li><b>Miss:</b> app to cache, then to the database and its SSD, then the result is written into the cache. A miss costs more than having no cache.</li>
+          </ul></div>
+        <div class="blk"><h3>The price</h3>
+          <p>A cached value can be out of date, and deciding when to remove it is hard. A very popular entry that expires can send every request to the database at once. Cache patterns and their pitfalls could be a page of their own.</p></div>
+        <p class="pc"><b>Normally:</b> latency over consistency. A hit is fast but may be stale, and the staleness window is how long entries live. <b>During a partition from the database:</b> serve stale data (available) or fail (consistent).</p>
+      </section>
+
+      <section class="screen" data-n="5">
+        <h2><span class="rank">5</span>Slow jobs hold requests open</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>Some work takes seconds or minutes, such as processing a video, building a report, sending email or running a model. A request that waits for it ties up a worker for that whole time, which from screen 3 means less capacity for everyone, and the user may hit a timeout.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Accept the request, write a job to a durable queue, and reply at once with "accepted" and a job ID. Separate workers pick the job up later. The user checks back or is notified.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>A short path: app to queue (a network hop and a durable write, a few milliseconds), then the reply. The slow work runs off the request path.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>"Accepted" and "done" disagree for a while. A job can run twice after a failure, so the work has to be safe to repeat. You also need job status, retries, and a plan for jobs that keep failing.</p></div>
+        <p class="pc"><b>Normally:</b> latency over consistency. The reply is instant, but the result is not ready yet. <b>During a partition:</b> the queue can keep accepting work (available) while processing falls behind.</p>
+      </section>
+
+      <section class="screen" data-n="6">
+        <h2><span class="rank">6</span>The primary database is drowning in reads</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>Reads still pile up on one database, because the cache helps but misses and rarely used data still land there. Also, there is only one copy of the data.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Add read replicas, which are copies that follow the primary. Reads go to the replicas. Writes go to the primary, which ships its log of changes to them.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <ul>
+            <li><b>Read:</b> app to a replica, one hop plus RAM or SSD.</li>
+            <li><b>Write:</b> app to the primary, one hop plus an SSD write to its log, then copied to the replicas.</li>
+          </ul></div>
+        <div class="blk"><h3>The price</h3>
+          <p>With asynchronous copying, replicas lag. A user can save something and then read the old version, and after a failover the newest writes can be lost. With synchronous copying every write waits for a replica to confirm, which is slower.</p></div>
+        <p class="pc"><b>Normally:</b> asynchronous replication is latency over consistency, and synchronous is the reverse. <b>During a partition:</b> promote a replica (available, but writes may be lost or forked) or stop accepting writes (consistent).</p>
+      </section>
+
+      <section class="screen" data-n="7">
+        <h2><span class="rank">7</span>One database can't hold the data or the writes</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>Replicas do not help here. Every copy holds all the data, and one primary takes all the writes. Once the data outgrows what one machine handles comfortably, or the writes saturate it, you need a different split.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Shard the data: split it by key across several databases, each with its own copies, and route each request to the right one.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>Work out the shard from the key, then one hop to that shard.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>A query or transaction that spans shards needs several hops and coordination. One shard can get hotter than the others, and moving data between shards is hard. If a shard is unreachable, its slice of the data is unavailable.</p></div>
+        <p class="pc"><b>Normally:</b> keeping a cross-shard change consistent costs latency, and skipping that costs consistency. <b>During a partition:</b> the unreachable slice is unavailable.</p>
+      </section>
+
+      <section class="screen" data-n="8">
+        <h2><span class="rank">8</span>Many teams are blocked on one codebase</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>One codebase and one release for everyone means teams collide, one bug can take down everything, and parts that need different amounts of capacity scale together.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Split the app into services. Each owns its own data and calls the others over the network.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>One user request fans out into calls between services. Calls that depend on each other add up: five in a row is about 2.5 ms in hops alone, and the slowest call sets the pace.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Latency accumulates, and any one slow service slows the whole request. This fix is as much about organizing teams as about capacity. It adds hops and does not remove load.</p></div>
+        <p class="pc"><b>Normally:</b> there is no single transaction across services. Either they agree eventually (a series of steps with an undo for each, so latency and availability win) or they use distributed transactions (consistent, slower). <b>During a partition:</b> a service that cannot reach another degrades or fails that part.</p>
+      </section>
+
+      <section class="screen" data-n="9">
+        <h2><span class="rank">9</span>Faraway users pay about 150 ms per round trip</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>A user on another continent pays the ocean rung on every round trip, about 150 ms from California to the Netherlands and back. A whole region failing also takes the site down.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Run a second region with its own copy of the stack, and send each user to the nearest one.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>Reads stay local. Writes either cross regions to a home copy, which costs the ocean rung, or are applied locally and copied afterward.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>You choose between fast writes that regions can disagree about for a while, and consistent writes that wait on a cross-region round trip. Conflicting writes in two regions need a rule for who wins.</p></div>
+        <p class="pc"><b>Normally:</b> synchronous agreement across regions is consistent but pays about 150 ms per write. Asynchronous is fast and local, and consistency is the price. <b>During a partition between regions:</b> both sides keep serving (available, and they diverge and reconcile later) or one side stops (consistent). This is the full PACELC choice, and systems differ on where they land. <a class="src" href="https://en.wikipedia.org/wiki/PACELC_design_principle" target="_blank" rel="noopener">source</a></p>
+      </section>
+
+      <section class="screen" data-n="10">
+        <h2><span class="rank">10</span>When the best fix is to skip the backend</h2>
+        <div class="blk"><h3>The idea</h3>
+          <p>Every fix above makes the backend handle more. The cheapest request is one it never sees. Answer from the CDN, serve pages that were built ahead of time, or run small functions only when a request arrives. Each has its own price, such as staleness at the CDN or a slow first request for a function that has not run recently.</p></div>
+        <div class="blk"><h3>The designs side by side</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Design</th><th>A common request touches</th><th>Main price</th></tr></thead>
+            <tbody>
+              <tr><td>1 One machine</td><td>RAM, SSD</td><td>One point of failure</td></tr>
+              <tr><td>2 Separate database</td><td>One hop per query</td><td>Latency per query</td></tr>
+              <tr><td>3 App servers and load balancer</td><td>One extra hop in front</td><td>Shared database, connection limits</td></tr>
+              <tr><td>4 Cache</td><td>RAM over one hop</td><td>Stale reads</td></tr>
+              <tr><td>5 Queue and workers</td><td>A short path; slow work runs elsewhere</td><td>Done later than accepted</td></tr>
+              <tr><td>6 Read replicas</td><td>A replica read</td><td>Replication lag</td></tr>
+              <tr><td>7 Shards</td><td>One hop to the right shard</td><td>Cross-shard work</td></tr>
+              <tr><td>8 Services</td><td>Several hops in a row</td><td>Latency adds up</td></tr>
+              <tr><td>9 Regions</td><td>Local reads; ocean rung for synchronous writes</td><td>Consistency or latency</td></tr>
+            </tbody>
+          </table></div></div>
+      </section>
+
+    </div>
+  </div>
+
+  <p class="note">Figures such as 0.5 ms per hop and 150 ms across the ocean are typical, rounded values from the Latency Ladder page. They vary by network.</p>
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ol>
+      <li>PostgreSQL documentation, <a href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">connection settings</a> (default <code>max_connections</code> is typically 100) and <a href="https://www.postgresql.org/docs/current/connect-estab.html" target="_blank" rel="noopener">how connections are established</a> (a "process per user" model).</li>
+      <li>Gunicorn, <a href="https://gunicorn.org/design/" target="_blank" rel="noopener">design</a> (worker types, worker count, buffering proxy).</li>
+      <li>nginx, <a href="https://nginx.org/en/docs/ngx_core_module.html#worker_connections" target="_blank" rel="noopener">core module</a> (<code>worker_connections</code>, <code>worker_processes</code>) and <a href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">Inside NGINX</a> (event-driven design).</li>
+      <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">Little's law</a>.</li>
+      <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/PACELC_design_principle" target="_blank" rel="noopener">PACELC design principle</a>, which cites Daniel Abadi, <em>Consistency Tradeoffs in Modern Distributed Database System Design</em>.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var svg = document.getElementById("bk");
+    var groups = svg ? svg.querySelectorAll("g[data-s]") : [];
+    var prog = document.getElementById("prog");
+    function show(n) {
+      groups.forEach(function (g) {
+        var on = g.getAttribute("data-s").split(" ").indexOf(String(n)) > -1;
+        g.classList.toggle("show", on);
+        g.classList.toggle("new", on && g.getAttribute("data-new") === String(n));
+      });
+      if (prog) prog.textContent = "screen " + n + " of 10";
+    }
+    show(1);
+    if (!("IntersectionObserver" in window)) { show(10); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) show(e.target.getAttribute("data-n"));
+      });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    document.querySelectorAll(".screen[data-n]").forEach(function (s) { io.observe(s); });
+  })();
+</script>
