@@ -1,0 +1,427 @@
+<title>Web Server Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: a sticky diagram of one web server; the box inside each worker changes as the screens scroll. */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --track: #E6EAF0; --rule: #CBD3DD;
+    --cpu: #8DB8E8; --ram: #6A9FDB; --ssd: #4A85CB; --hop: #2F6BB5; --ocean: #123A78;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+      --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+    --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .back { font-size: 0.875rem; color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 12px; }
+  .back:hover { text-decoration: underline; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
+  a { color: inherit; }
+  a.src { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+
+  .layout { display: grid; grid-template-columns: 480px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .layout aside { position: sticky; top: 16px; }
+  .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .layout figcaption { font-size: 0.75rem; color: var(--muted); }
+  .layout svg { width: 100%; max-height: calc(100vh - 90px); }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout aside { position: static; max-width: 520px; }
+    .layout svg { max-height: none; }
+  }
+
+  .ws .t { fill: var(--fg); font: 11px var(--mono); }
+  .ws .tb { fill: var(--fg); font: 600 11px var(--mono); }
+  .ws .m { fill: var(--muted); font: 10px var(--mono); }
+  .ws .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  .ws rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
+  .ws rect.frame { fill: none; stroke: var(--rule); stroke-width: 2; }
+  .ws rect.dot { fill: var(--cpu); }
+  .ws g[data-s] { opacity: 0; transition: opacity 0.3s; }
+  .ws g[data-s].show { opacity: 1; }
+  .ws g.show.new rect.ent { fill: var(--track); stroke-width: 3; }
+  @media (prefers-reduced-motion: reduce) { .ws g[data-s] { transition: none; } }
+
+  .stack { display: flex; flex-direction: column; min-width: 0; }
+  .screen { display: flex; flex-direction: column; gap: 12px; padding-block: 28px; border-top: 1px solid var(--rule); min-height: 60vh; }
+  .screen:first-child { border-top: 0; padding-top: 0; }
+  .screen h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .screen h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .blk h3 { margin: 0 0 2px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .blk p { margin: 0 0 6px; max-width: 66ch; }
+  .blk ul, .blk ol { margin: 0 0 6px; padding-left: 1.2em; max-width: 66ch; display: flex; flex-direction: column; gap: 4px; }
+  .blk code { font-family: var(--mono); font-size: 0.875em; }
+
+  table { border-collapse: collapse; font-size: 0.875rem; min-width: 560px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .tablewrap { overflow-x: auto; }
+
+  .sources { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.875rem; color: var(--muted); max-width: 72ch; }
+  .sources h2 { font-size: 1rem; margin: 0 0 8px; color: var(--fg); }
+  .sources ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+  .note { color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
+</style>
+
+<main class="wrap">
+  <header>
+    <a class="back" href="scaling-the-backend.html">&larr; Scaling the Backend</a>
+    <h1>Web Server Models</h1>
+    <p class="lede">A web server runs your code for many requests at once. Servers do this in very different ways, and the differences set how many requests they can take, how much memory they use, and what rules your code must follow. This page starts with the two choices every server makes, then goes through the options one at a time.</p>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <figure>
+        <svg class="ws" id="ws" viewBox="0 0 520 604" role="img" aria-labelledby="ws-title">
+          <title id="ws-title">A web server: clients reach a listener and an accept queue, then workers run the handler, which talks to a database. The picture inside a worker changes with each model: one request at a time, a thread pool, an event loop, or lightweight threads.</title>
+          <defs>
+            <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
+            </marker>
+          </defs>
+
+          <!-- clients, listener and database (all screens) -->
+          <g data-s="1 2 3 4 5 6 7 8"><text class="m" x="55" y="208" text-anchor="middle">clients</text><path class="ln" d="M55 214V248" marker-end="url(#ah)"/></g>
+          <g data-s="9" data-new="9" style="--c: var(--hop)">
+            <text class="m" x="55" y="92" text-anchor="middle">clients</text>
+            <path class="ln" d="M55 98V126" marker-end="url(#ah)"/>
+            <rect class="ent" x="10" y="128" width="90" height="50" rx="4"/>
+            <text class="tb" x="55" y="150" text-anchor="middle">nginx</text>
+            <text class="m" x="55" y="166" text-anchor="middle">slow clients</text>
+            <path class="ln" d="M55 178V248" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="1 2 3 4 5 6 7 8 9" style="--c: var(--hop)">
+            <rect class="ent" x="10" y="250" width="90" height="60" rx="4"/>
+            <text class="tb" x="55" y="276" text-anchor="middle">listener</text>
+            <text class="m" x="55" y="293" text-anchor="middle">accept queue</text>
+            <path class="ln" d="M100 280H168" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="1 2 3 4 5 6 7 8 9" style="--c: var(--ssd)">
+            <rect class="ent" x="170" y="530" width="340" height="50" rx="4"/>
+            <text class="tb" x="340" y="552" text-anchor="middle">database</text>
+            <text class="m" x="340" y="568" text-anchor="middle">has its own connection limit</text>
+          </g>
+
+          <!-- the server frame and its label -->
+          <g data-s="1 2 3 4 5 6 7 8 9" data-new="1"><rect class="frame" x="170" y="70" width="340" height="370" rx="6"/></g>
+          <g data-s="1"><text class="tb" x="180" y="90">workers</text></g>
+          <g data-s="2"><text class="tb" x="180" y="90">a web server</text></g>
+          <g data-s="3 4 5 6 7 9"><text class="tb" x="180" y="90">worker 1, zoomed in</text></g>
+          <g data-s="8"><text class="tb" x="180" y="90">same await syntax, different carrier</text></g>
+
+          <!-- pre-fork: master and the other workers -->
+          <g data-s="3 4 5 6 7 8 9" data-new="3" style="--c: var(--cpu)">
+            <rect class="ent" x="260" y="16" width="160" height="38" rx="4"/>
+            <text class="tb" x="340" y="33" text-anchor="middle">master</text>
+            <text class="m" x="340" y="47" text-anchor="middle">forks and replaces workers</text>
+            <path class="ln" d="M340 54V68" marker-end="url(#ah)"/>
+            <rect class="ent" x="180" y="448" width="150" height="38" rx="4"/>
+            <text class="tb" x="255" y="472" text-anchor="middle">worker 2</text>
+            <rect class="ent" x="350" y="448" width="150" height="38" rx="4"/>
+            <text class="tb" x="425" y="472" text-anchor="middle">worker N</text>
+          </g>
+
+          <!-- inside the frame, per screen -->
+          <g data-s="1" data-new="1" style="--c: var(--cpu)">
+            <rect class="ent" x="190" y="150" width="300" height="70" rx="4"/>
+            <text class="tb" x="340" y="180" text-anchor="middle">your handler</text>
+            <text class="m" x="340" y="198" text-anchor="middle">runs once per request</text>
+          </g>
+          <g data-s="2" data-new="2" style="--c: var(--cpu)">
+            <rect class="ent" x="190" y="100" width="300" height="90" rx="4"/>
+            <text class="tb" x="200" y="122">layer 1</text>
+            <text class="m" x="200" y="140">one process, or several</text>
+            <path class="ln" d="M340 190V228" marker-end="url(#ah)"/>
+            <rect class="ent" x="190" y="230" width="300" height="90" rx="4"/>
+            <text class="tb" x="200" y="252">layer 2</text>
+            <text class="m" x="200" y="270">how one process runs many requests</text>
+          </g>
+          <g data-s="3" data-new="3" style="--c: var(--cpu)">
+            <rect class="ent" x="190" y="150" width="300" height="70" rx="4"/>
+            <text class="tb" x="340" y="180" text-anchor="middle">your handler</text>
+            <text class="m" x="340" y="198" text-anchor="middle">how it runs: the next screens</text>
+          </g>
+          <g data-s="4" data-new="4" style="--c: var(--cpu)">
+            <rect class="ent" x="190" y="130" width="300" height="70" rx="4"/>
+            <text class="tb" x="340" y="158" text-anchor="middle">handler</text>
+            <text class="m" x="340" y="176" text-anchor="middle">one request at a time</text>
+            <text class="m" x="200" y="232">a wait on the database blocks this worker</text>
+            <text class="m" x="200" y="250">one slow client does too</text>
+          </g>
+          <g data-s="5" data-new="5" style="--c: var(--cpu)">
+            <text class="m" x="190" y="108">one process, shared memory</text>
+            <rect class="ent" x="190" y="120" width="90" height="60" rx="4"/>
+            <rect class="ent" x="290" y="120" width="90" height="60" rx="4"/>
+            <rect class="ent" x="390" y="120" width="90" height="60" rx="4"/>
+            <text class="tb" x="235" y="146" text-anchor="middle">thread</text><text class="m" x="235" y="162" text-anchor="middle">handler</text>
+            <text class="tb" x="335" y="146" text-anchor="middle">thread</text><text class="m" x="335" y="162" text-anchor="middle">handler</text>
+            <text class="tb" x="435" y="146" text-anchor="middle">thread</text><text class="m" x="435" y="162" text-anchor="middle">handler</text>
+            <path class="ln" d="M235 180V340M335 180V340M435 180V340"/>
+            <rect class="ent" x="190" y="340" width="300" height="46" rx="4" style="--c: var(--ssd)"/>
+            <text class="tb" x="340" y="361" text-anchor="middle">shared pool</text>
+            <text class="m" x="340" y="377" text-anchor="middle">fewer connections than threads</text>
+            <path class="ln" d="M340 386V440"/>
+          </g>
+          <g data-s="6" data-new="6" style="--c: var(--cpu)">
+            <rect class="ent" x="190" y="110" width="300" height="240" rx="4"/>
+            <text class="tb" x="200" y="130">event loop (one thread)</text>
+            <rect class="ent" x="205" y="146" width="270" height="34" rx="4" style="--c: var(--rule)"/>
+            <text class="t" x="215" y="167">task A: waiting on the database</text>
+            <rect class="ent" x="205" y="190" width="270" height="34" rx="4" style="--c: var(--rule)"/>
+            <text class="t" x="215" y="211">task B: waiting on a client</text>
+            <rect class="ent" x="205" y="234" width="270" height="34" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="215" y="255">task C: running now</text>
+            <text class="m" x="200" y="298">a blocking call here freezes every task</text>
+            <text class="m" x="200" y="316">more loops use more cores</text>
+            <path class="ln" d="M340 350V440"/>
+          </g>
+          <g data-s="7" data-new="7" style="--c: var(--cpu)" id="gor">
+            <text class="m" x="190" y="108">thousands of tiny threads</text>
+            <rect class="ent" x="190" y="190" width="300" height="50" rx="4"/>
+            <text class="tb" x="340" y="212" text-anchor="middle">runtime scheduler</text>
+            <text class="m" x="340" y="228" text-anchor="middle">parks a waiting one, runs another</text>
+            <rect class="ent" x="200" y="280" width="90" height="44" rx="4"/><text class="tb" x="245" y="306" text-anchor="middle">OS thread</text>
+            <rect class="ent" x="300" y="280" width="90" height="44" rx="4"/><text class="tb" x="345" y="306" text-anchor="middle">OS thread</text>
+            <rect class="ent" x="400" y="280" width="90" height="44" rx="4"/><text class="tb" x="445" y="306" text-anchor="middle">OS thread</text>
+            <path class="ln" d="M245 240V280M345 240V280M445 240V280"/>
+            <text class="m" x="200" y="348">about one per core</text>
+            <path class="ln" d="M340 324V440"/>
+          </g>
+          <g data-s="8" data-new="8" style="--c: var(--cpu)">
+            <rect class="ent" x="190" y="110" width="300" height="50" rx="4"/>
+            <text class="tb" x="200" y="131">Python asyncio</text><text class="m" x="200" y="148">one loop thread runs the paused tasks</text>
+            <rect class="ent" x="190" y="172" width="300" height="50" rx="4"/>
+            <text class="tb" x="200" y="193">.NET</text><text class="m" x="200" y="210">a free pool thread resumes the task</text>
+            <rect class="ent" x="190" y="234" width="300" height="50" rx="4"/>
+            <text class="tb" x="200" y="255">Rust Tokio</text><text class="m" x="200" y="272">tasks move between worker threads</text>
+            <rect class="ent" x="190" y="296" width="300" height="50" rx="4"/>
+            <text class="tb" x="200" y="317">Go</text><text class="m" x="200" y="334">no await: goroutines on a scheduler</text>
+          </g>
+          <g data-s="9" data-new="9" style="--c: var(--cpu)">
+            <rect class="ent" x="190" y="130" width="300" height="70" rx="4"/>
+            <text class="tb" x="340" y="158" text-anchor="middle">inside each worker</text>
+            <text class="m" x="340" y="176" text-anchor="middle">sync, threads, or an event loop</text>
+          </g>
+
+          <!-- arrow from the frame to the database and its label -->
+          <g data-s="1 2 3 4 5 6 7 9"><path class="ln" d="M340 440V528" marker-end="url(#ah)"/></g>
+          <g data-s="1 2"><text class="m" x="348" y="510">waits here</text></g>
+          <g data-s="3"><text class="m" x="348" y="510">own connections per worker</text></g>
+          <g data-s="4"><text class="m" x="348" y="510">worker blocked while it waits</text></g>
+          <g data-s="5"><text class="m" x="348" y="510">pool is its own limit</text></g>
+          <g data-s="6"><text class="m" x="348" y="510">no thread blocked</text></g>
+          <g data-s="7"><text class="m" x="348" y="510">the pool still limits</text></g>
+          <g data-s="9"><text class="m" x="348" y="510">connections add up</text><text class="m" x="170" y="598">connections = servers x workers x pool size</text></g>
+        </svg>
+        <figcaption>The box inside the worker changes with each screen. Everything else stays the same, so the models compare directly.</figcaption>
+      </figure>
+    </aside>
+
+    <div class="stack">
+
+      <section class="screen" data-n="1">
+        <h2><span class="rank">1</span>Many requests arrive at once, and each spends most of its time waiting</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>A web server handles many clients at the same time. For each request, your handler does a few milliseconds of real work and then waits, usually for a database. A server that does one thing at a time would spend nearly all its time idle.</p></div>
+        <div class="blk"><h3>The shape</h3>
+          <p>A listener accepts connections. The operating system finishes each TCP handshake itself and queues the finished connections until the server takes one. Workers take requests from there and run your handler, which talks to the database.</p></div>
+        <div class="blk"><h3>The question</h3>
+          <p>How many requests can be in progress at once, and what does each waiting request cost? That sets the capacity. By Little's law, the number of requests in progress equals the arrival rate times the time each one takes. <a class="src" href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">source</a></p>
+          <p>The rest of the page is about the different answers servers give.</p></div>
+      </section>
+
+      <section class="screen" data-n="2">
+        <h2><span class="rank">2</span>Every web server answers two questions</h2>
+        <div class="blk"><h3>The two layers</h3>
+          <ol>
+            <li><b>Layer 1: how many processes?</b> One, or several started by a master process (pre-fork).</li>
+            <li><b>Layer 2: how does one process run many requests?</b> One at a time, with a pool of threads, with an event loop, or with lightweight threads.</li>
+          </ol>
+          <p>Servers that look unrelated are usually different combinations of these two choices.</p></div>
+        <div class="blk"><h3>Some common combinations</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th></th><th>One at a time</th><th>Thread pool</th><th>Event loop</th><th>Lightweight threads</th></tr></thead>
+            <tbody>
+              <tr><td><b>One process</b></td><td>simple development servers</td><td>Tomcat, Jetty</td><td>Node.js, one uvicorn process</td><td>Go, Java virtual threads</td></tr>
+              <tr><td><b>Pre-fork processes</b></td><td>gunicorn sync, PHP-FPM</td><td>gunicorn gthread, Puma</td><td>gunicorn with uvicorn workers, nginx, Node's cluster mode</td><td>gunicorn gevent</td></tr>
+            </tbody>
+          </table></div>
+          <p class="note">The gunicorn, nginx, Node, Go and Java rows are backed by the sources below. The others are from general knowledge and not checked here.</p></div>
+      </section>
+
+      <section class="screen" data-n="3">
+        <h2><span class="rank">3</span>One process uses one core, and one crash ends it all</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>A single process can use only so much of a machine. In CPython, only one thread runs Python code at a time (the GIL), so one process can't use several cores. A crash or an out-of-memory kill in that process also stops every request it was handling.</p></div>
+        <div class="blk"><h3>The fix: pre-fork</h3>
+          <p>A master process opens the listening socket and then forks several worker processes. Each worker inherits the open socket and accepts connections from it, and the kernel hands each new connection to one waiting worker. The master doesn't handle requests. It restarts workers that die or hang.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>The kernel's handshake and accept queue, then one worker, then your handler, then the database through that worker's own connection.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <ul>
+            <li>Each worker has its own memory. Pages are shared right after the fork, but they are copied as a worker changes them, so the sharing shrinks over time.</li>
+            <li>An in-process cache is duplicated in every worker.</li>
+            <li>Every worker holds its own database connections, so connections multiply with the number of workers.</li>
+            <li>The benefit is isolation. A bad request or a leak affects one worker, and the master replaces it.</li>
+          </ul>
+          <p>Pre-fork only answers layer 1. What a worker does inside is the next question.</p></div>
+      </section>
+
+      <section class="screen" data-n="4">
+        <h2><span class="rank">4</span>One request at a time is simple, until requests wait</h2>
+        <div class="blk"><h3>How it works</h3>
+          <p>This is gunicorn's default sync worker. It handles one request per worker at a time and closes the connection after each response. Its docs say it needs a buffering proxy such as nginx in production. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></p>
+          <p>The docs suggest starting with (2 × cores) + 1 workers, and warn that workers are not clients: they say 4 to 12 workers typically handle heavy traffic, and too many waste resources and can reduce throughput.</p></div>
+        <div class="blk"><h3>The problem it runs into</h3>
+          <p>Say there are 4 workers and each request takes 100 ms, of which 80 ms is waiting on the database. Capacity is about 4 ÷ 0.1 = 40 requests per second, and each worker is idle most of the time.</p>
+          <p>A slow client is worse. If one takes 2 seconds to send its request, that worker is stuck for 2 seconds, and four such clients stall the whole server. nginx collects the full request first and hands it over in one quick step.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Simple and easy to reason about, but capacity is only the number of workers, and every wait on a slow dependency uses one up.</p></div>
+      </section>
+
+      <section class="screen" data-n="5">
+        <h2><span class="rank">5</span>Processes are heavy, and a waiting worker is idle</h2>
+        <div class="blk"><h3>The fix: a thread pool</h3>
+          <p>Run a pool of threads inside each process. Threads share the process's memory, so each one costs far less than another process. While one thread waits on the database, others run. gunicorn's gthread worker works this way, with a thread pool inside each worker process, and it supports keep-alive. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a> Java servlet containers such as Tomcat use a thread pool inside one process.</p></div>
+        <div class="blk"><h3>What a request touches</h3>
+          <p>The accept queue, then one free thread, then your handler, then a connection borrowed from a shared pool.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <ul>
+            <li>Shared memory means shared state, so code must be thread-safe.</li>
+            <li>In CPython, the GIL means threads help with waiting but not with running Python code in parallel. JVM threads run in parallel across cores.</li>
+            <li>Threads share a pool of database connections, so there can be hundreds of threads and only a few connections. Threads then wait for a connection, which is a second waiting line.</li>
+            <li>A thread that is waiting still holds a thread. Thousands of them get expensive.</li>
+          </ul></div>
+      </section>
+
+      <section class="screen" data-n="6">
+        <h2><span class="rank">6</span>Threads still sit idle while they wait</h2>
+        <div class="blk"><h3>The fix: an event loop</h3>
+          <p>One thread runs many requests. When a handler has to wait, it pauses and saves where it stopped, and the loop runs another. The operating system does the waiting. Node's docs describe this as non-blocking I/O with a single JavaScript thread, by offloading operations to the system kernel. <a class="src" href="https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick" target="_blank" rel="noopener">source</a></p>
+          <ol>
+            <li>Request A arrives. The loop runs the handler until it awaits the database, sends the query, and pauses A.</li>
+            <li>B and C arrive and do the same. Three queries are in flight and the thread is idle.</li>
+            <li>The database answers A. The loop resumes A where it paused and finishes it. Then B and C.</li>
+          </ol>
+          <p>A paused request costs only its saved state in memory. nginx, which is event-driven with about one worker per core, uses this to hold very large numbers of connections cheaply. <a class="src" href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">source</a></p></div>
+        <div class="blk"><h3>The price</h3>
+          <ul>
+            <li>Blocking freezes the loop. Python's docs say that if a function does a CPU-intensive calculation for 1 second, all concurrent tasks and I/O are delayed by 1 second. <a class="src" href="https://docs.python.org/3/library/asyncio-dev.html" target="_blank" rel="noopener">source</a> Blocking work goes to an executor, which runs it in another thread or process.</li>
+            <li>One loop uses one core. To use more, run several loops, one per process (nginx, or gunicorn with uvicorn workers) or one per thread.</li>
+            <li>The handler must be written for it. In Python that means <code>async def</code> with an ASGI server. gunicorn's ASGI worker runs an asyncio loop in each worker. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></li>
+          </ul></div>
+      </section>
+
+      <section class="screen" data-n="7">
+        <h2><span class="rank">7</span>Blocking-style code with event-loop efficiency</h2>
+        <div class="blk"><h3>The fix: lightweight threads</h3>
+          <p>Write ordinary code that looks like it blocks, and let a runtime make it cheap. A runtime scheduler runs very many lightweight threads on a few OS threads, and parks one whenever it waits on the network.</p>
+          <ul>
+            <li><b>Go:</b> the standard HTTP server accepts connections and creates a new service goroutine for each. <a class="src" href="https://pkg.go.dev/net/http#Serve" target="_blank" rel="noopener">source</a></li>
+            <li><b>Java virtual threads:</b> a virtual thread is not tied to a particular OS thread. When one blocks on I/O, the runtime suspends it and frees its OS thread. They are for scale, not speed. <a class="src" href="https://openjdk.org/jeps/444" target="_blank" rel="noopener">source</a></li>
+            <li><b>gevent:</b> gunicorn's greenlet-based worker, which can handle thousands of concurrent connections. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></li>
+          </ul></div>
+        <div class="blk"><h3>The price</h3>
+          <ul>
+            <li>Nothing in the model limits how many run at once. Under overload that shows up as memory use and database waits, unless you add limits yourself. The database pool is still a hard limit.</li>
+            <li>There are exceptions. In Java, a virtual thread inside a <code>synchronized</code> block, or in a native call, can't unmount and holds its OS thread.</li>
+            <li>gevent needs libraries patched to cooperate, and it doesn't work with code that depends on blocking behavior.</li>
+          </ul></div>
+      </section>
+
+      <section class="screen" data-n="8">
+        <h2><span class="rank">8</span>async/await looks the same everywhere, but it isn't</h2>
+        <div class="blk"><h3>The confusion</h3>
+          <p><code>async</code> and <code>await</code> are syntax that says "this code can pause here". What actually runs the paused code differs by language.</p>
+          <ul>
+            <li><b>Python asyncio:</b> an event loop runs in a thread and runs all tasks in that thread, one at a time. When a task awaits, it is suspended and the loop runs the next one. <a class="src" href="https://docs.python.org/3/library/asyncio-dev.html" target="_blank" rel="noopener">source</a></li>
+            <li><b>Rust's Tokio:</b> a multi-threaded scheduler with work stealing and, by default, one worker thread per core. <a class="src" href="https://docs.rs/tokio/latest/tokio/runtime/index.html" target="_blank" rel="noopener">source</a></li>
+            <li><b>.NET:</b> as I understand it, the rest of a method after an await typically resumes on a free thread-pool thread. This one I haven't checked against the docs.</li>
+            <li><b>Go:</b> no <code>await</code> at all. Goroutines on a scheduler, as in the last screen.</li>
+          </ul></div>
+        <div class="blk"><h3>The question to ask of any server</h3>
+          <p>What carries a request while it waits? A whole process (pre-fork, one at a time), a thread (thread pool), or a paused task or lightweight thread (event loop and the rest). The first costs the most memory per waiting request, and the last costs the least.</p></div>
+      </section>
+
+      <section class="screen" data-n="9">
+        <h2><span class="rank">9</span>Putting it together</h2>
+        <div class="blk"><h3>A typical Python setup</h3>
+          <p>nginx in front, gunicorn behind it. nginx handles the secure handshake and slow clients, and hands whole requests to gunicorn's workers over a fast local connection. Inside each worker you pick the model that fits your code. gunicorn's docs suggest sync for a simple app behind nginx, gthread when you need keep-alive or moderate concurrency, and gevent or an ASGI worker for WebSockets, streaming or async frameworks. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></p></div>
+        <div class="blk"><h3>What stays true in every model</h3>
+          <ul>
+            <li>Capacity is concurrency divided by time per request, so a slow dependency lowers capacity.</li>
+            <li>Database connections add up: servers × workers × pool size. Postgres, for example, defaults to about 100 connections, so a few busy servers can exceed it. <a class="src" href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">source</a></li>
+            <li>The model decides what a waiting request costs and which rules your code must follow, such as thread safety or never blocking.</li>
+          </ul></div>
+      </section>
+
+    </div>
+  </div>
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ol>
+      <li>Gunicorn, <a href="https://gunicorn.org/design/" target="_blank" rel="noopener">design</a>: worker types, keep-alive, worker count, buffering proxy.</li>
+      <li>nginx, <a href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">Inside NGINX</a>: event-driven design, one worker per core.</li>
+      <li>Node.js, <a href="https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick" target="_blank" rel="noopener">the event loop</a>.</li>
+      <li>Python, <a href="https://docs.python.org/3/library/asyncio-dev.html" target="_blank" rel="noopener">asyncio developing</a>: blocking code, executors, one task at a time per loop.</li>
+      <li>Go, <a href="https://pkg.go.dev/net/http#Serve" target="_blank" rel="noopener">net/http Serve</a>: a goroutine for each connection.</li>
+      <li>OpenJDK, <a href="https://openjdk.org/jeps/444" target="_blank" rel="noopener">JEP 444: virtual threads</a>.</li>
+      <li>Tokio, <a href="https://docs.rs/tokio/latest/tokio/runtime/index.html" target="_blank" rel="noopener">runtime</a>: work-stealing scheduler.</li>
+      <li>PostgreSQL, <a href="https://www.postgresql.org/docs/current/runtime-config-connection.html" target="_blank" rel="noopener">connection settings</a>.</li>
+      <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">Little's law</a>.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var svg = document.getElementById("ws");
+    var groups = svg ? svg.querySelectorAll("g[data-s]") : [];
+    var gor = document.getElementById("gor");
+    if (gor) {
+      var NS = "http://www.w3.org/2000/svg";
+      for (var row = 0; row < 2; row++) {
+        for (var i = 0; i < 14; i++) {
+          var r = document.createElementNS(NS, "rect");
+          r.setAttribute("class", "dot");
+          r.setAttribute("x", 190 + i * 22);
+          r.setAttribute("y", 120 + row * 24);
+          r.setAttribute("width", 14);
+          r.setAttribute("height", 14);
+          r.setAttribute("rx", 2);
+          gor.appendChild(r);
+        }
+      }
+    }
+    function show(n) {
+      groups.forEach(function (g) {
+        var on = g.getAttribute("data-s").split(" ").indexOf(String(n)) > -1;
+        g.classList.toggle("show", on);
+        g.classList.toggle("new", on && g.getAttribute("data-new") === String(n));
+      });
+    }
+    show(1);
+    if (!("IntersectionObserver" in window)) { show(9); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) show(e.target.getAttribute("data-n"));
+      });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    document.querySelectorAll(".screen[data-n]").forEach(function (s) { io.observe(s); });
+  })();
+</script>
