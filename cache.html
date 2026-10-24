@@ -1,0 +1,404 @@
+<title>How Caches Work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: a sticky diagram that gains one box per screen; the problem, fix and price for each screen scroll on the right. */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --track: #E6EAF0; --rule: #CBD3DD;
+    --cpu: #8DB8E8; --ram: #6A9FDB; --ssd: #4A85CB; --hop: #2F6BB5; --ocean: #123A78;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+      --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+    --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .back { font-size: 0.875rem; color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 12px; }
+  .back:hover { text-decoration: underline; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
+  a { color: inherit; }
+  a.src { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+
+  .pacelc { margin: 0; padding: 12px 14px; background: var(--track); border-radius: 4px; max-width: 70ch; font-size: 0.9375rem; }
+  .pacelc b { font-weight: 600; }
+
+  .layout { display: grid; grid-template-columns: 480px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .layout aside { position: sticky; top: 16px; }
+  .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .layout figcaption { font-size: 0.75rem; color: var(--muted); }
+  .layout svg { width: 100%; max-height: calc(100vh - 90px); }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout aside { position: static; max-width: 520px; }
+    .layout svg { max-height: none; }
+  }
+
+  .bk .t { fill: var(--fg); font: 11px var(--mono); }
+  .bk .tb { fill: var(--fg); font: 600 11px var(--mono); }
+  .bk .m { fill: var(--muted); font: 10px var(--mono); }
+  .bk .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  .bk .dash { stroke-dasharray: 5 4; }
+  .bk rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
+  .bk rect.frame { fill: none; stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 5 4; }
+  .bk g[data-s] { opacity: 0; transition: opacity 0.3s; }
+  .bk g[data-s].show { opacity: 1; }
+  .bk g.show.new rect.ent { fill: var(--track); stroke-width: 3; }
+  .bk g.show.new path.ln { stroke: var(--fg); stroke-width: 1.75; }
+  @media (prefers-reduced-motion: reduce) { .bk g[data-s] { transition: none; } }
+
+  .stack { display: flex; flex-direction: column; min-width: 0; }
+  .screen { display: flex; flex-direction: column; gap: 12px; padding-block: 28px; border-top: 1px solid var(--rule); min-height: 60vh; }
+  .screen:first-child { border-top: 0; padding-top: 0; }
+  .screen h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .screen h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .blk h3 { margin: 0 0 2px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .blk p { margin: 0 0 6px; max-width: 66ch; }
+  .blk ul { margin: 0 0 6px; padding-left: 1.1em; max-width: 66ch; display: flex; flex-direction: column; gap: 4px; }
+  .blk code { font-family: var(--mono); font-size: 0.875em; }
+  .pc { margin: 0; padding: 10px 12px; background: var(--track); border-radius: 4px; font-size: 0.9375rem; max-width: 66ch; }
+  .pc b { font-weight: 600; }
+
+  table { border-collapse: collapse; font-size: 0.875rem; min-width: 560px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .tablewrap { overflow-x: auto; }
+
+  .sources { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.875rem; color: var(--muted); max-width: 72ch; }
+  .sources h2 { font-size: 1rem; margin: 0 0 8px; color: var(--fg); }
+  .sources ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
+  .note { color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
+
+  .bk rect.hit { fill: var(--ram); }
+  .bk rect.miss { fill: var(--ocean); }
+  .bk rect.cell { fill: var(--ram); }
+  .bk rect.cell.old { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 2; }
+  .closing { padding-block: 28px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 8px; }
+  .closing h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+  .closing p, .closing ul { max-width: 66ch; margin: 0; }
+  .closing ul { padding-left: 1.1em; display: flex; flex-direction: column; gap: 4px; }
+</style>
+
+<main class="wrap">
+  <header>
+    <a class="back" href="scaling-the-backend.html">&larr; Scaling the Backend</a>
+    <h1>How Caches Work</h1>
+    <p class="lede">A cache keeps a copy of data somewhere faster to reach than where it normally lives. This page follows one shared cache from its first read to the day it fails. Each screen starts with what goes wrong, adds one idea, and says what it costs.</p>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <figure>
+        <svg class="bk" id="bk" viewBox="0 0 520 520" role="img" aria-labelledby="bk-title">
+          <title id="bk-title">Two app servers read through a shared cache, with the database behind it. Across the screens the diagram adds the in-process copies, the hit and miss path with hit-rate squares, the write and delete path with a stale-fill race, a full cache dropping old entries, a hot key expiring, a cache that is down with a spare pool, and several cache nodes.</title>
+          <defs>
+            <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
+            </marker>
+          </defs>
+          <text class="m" id="prog" x="10" y="16">screen 1 of 7</text>
+
+          <g data-s="1 2 3 4 5 6 7" style="--c: var(--cpu)">
+            <rect class="ent" x="40" y="40" width="170" height="70" rx="4"/>
+            <rect class="ent" x="310" y="40" width="170" height="70" rx="4"/>
+            <text class="tb" x="52" y="58">app server 1</text>
+            <text class="tb" x="322" y="58">app server 2</text>
+          </g>
+
+          <g data-s="1 2 3 4 5 6 7" style="--c: var(--ssd)">
+            <rect class="ent" x="190" y="390" width="140" height="56" rx="4"/>
+            <text class="tb" x="260" y="414" text-anchor="middle">database</text>
+            <text class="m" x="260" y="430" text-anchor="middle">source of truth</text>
+          </g>
+
+          <g data-s="1" data-new="1" style="--c: var(--ram)">
+            <rect class="ent" x="52" y="68" width="146" height="32" rx="3"/>
+            <text class="m" x="125" y="88" text-anchor="middle">own copy, no hop</text>
+            <rect class="ent" x="322" y="68" width="146" height="32" rx="3"/>
+            <text class="m" x="395" y="88" text-anchor="middle">own copy, no hop</text>
+            <text class="m" x="20" y="232">one shared copy,</text>
+            <text class="m" x="20" y="246">one hop</text>
+          </g>
+          <g data-s="1 2 3 4 5 6" data-new="1" style="--c: var(--ram)">
+            <rect class="ent" x="190" y="210" width="140" height="56" rx="4"/>
+            <text class="tb" x="260" y="234" text-anchor="middle">shared cache</text>
+            <text class="m" x="260" y="250" text-anchor="middle">Redis, Memcached</text>
+            <path class="ln" d="M125 110V160H235V208" marker-end="url(#ah)"/>
+            <path class="ln" d="M395 110V160H285V208" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="1 2 3 4 5 6"><path class="ln dash" d="M260 266V388" marker-end="url(#ah)"/><text class="m" x="268" y="330">miss</text></g>
+
+          <g data-s="2" data-new="2">
+            <text class="m" x="20" y="466">90 of 100 reads hit</text>
+            <g id="g90"></g>
+            <text class="m" x="270" y="466">99 of 100 reads hit</text>
+            <g id="g99"></g>
+            <text class="m" x="20" y="514">database reads: 10</text>
+            <text class="m" x="270" y="514">database reads: 1</text>
+          </g>
+
+          <g data-s="3" data-new="3">
+            <path class="ln" d="M60 110V418H188" marker-end="url(#ah)"/>
+            <text class="m" x="64" y="300">write</text>
+            <path class="ln dash" d="M60 238H188" marker-end="url(#ah)"/>
+            <text class="m" x="72" y="230">then delete the key</text>
+            <text class="m" x="20" y="474">1 A misses, reads the database: old value</text>
+            <text class="m" x="20" y="490">2 B writes new value, deletes the key</text>
+            <text class="m" x="20" y="506">3 A fills the cache with old: stale</text>
+          </g>
+
+          <g data-s="4" data-new="4" style="--c: var(--ram)">
+            <path class="ln" d="M330 238H348"/>
+            <rect class="ent" x="350" y="200" width="160" height="104" rx="4"/>
+            <g id="cells"></g>
+            <text class="m" x="360" y="322">dashed: not used lately,</text>
+            <text class="m" x="360" y="336">dropped first when full</text>
+          </g>
+
+          <g data-s="5" data-new="5">
+            <path class="ln" d="M110 110V420H188" marker-end="url(#ah)"/>
+            <path class="ln" d="M410 110V420H332" marker-end="url(#ah)"/>
+            <text class="m" x="20" y="150">key expired:</text>
+            <text class="m" x="20" y="164">every request</text>
+            <text class="m" x="20" y="178">misses at once</text>
+            <text class="m" x="20" y="470">one request refills,</text>
+            <text class="m" x="20" y="486">the others wait briefly</text>
+          </g>
+
+          <g data-s="6" data-new="6" style="--c: var(--ram)">
+            <rect class="frame" x="186" y="206" width="148" height="64" rx="5"/>
+            <text class="m" x="268" y="288">down or empty</text>
+            <rect class="ent" x="360" y="210" width="130" height="56" rx="4"/>
+            <text class="tb" x="425" y="234" text-anchor="middle">spare cache</text>
+            <text class="m" x="425" y="250" text-anchor="middle">short-lived</text>
+            <path class="ln" d="M440 110V208" marker-end="url(#ah)"/>
+            <text class="m" x="312" y="182">no answer: ask spare</text>
+          </g>
+
+          <g data-s="7" data-new="7" style="--c: var(--ram)">
+            <path class="ln" d="M125 110V160"/><path class="ln" d="M395 110V160"/><path class="ln" d="M115 160H405"/>
+            <path class="ln" d="M115 160V208" marker-end="url(#ah)"/><path class="ln" d="M260 160V208" marker-end="url(#ah)"/><path class="ln" d="M405 160V208" marker-end="url(#ah)"/>
+            <text class="m" x="130" y="146">the key hash picks the node</text>
+            <rect class="ent" x="60" y="210" width="110" height="56" rx="4"/>
+            <text class="tb" x="115" y="244" text-anchor="middle">cache A</text>
+            <rect class="ent" x="205" y="210" width="110" height="56" rx="4"/>
+            <text class="tb" x="260" y="244" text-anchor="middle">cache B</text>
+            <rect class="ent" x="350" y="210" width="110" height="56" rx="4"/>
+            <text class="tb" x="405" y="244" text-anchor="middle">cache C</text>
+          </g>
+          <g data-s="7"><path class="ln dash" d="M115 266V320H225V388" marker-end="url(#ah)"/><path class="ln dash" d="M260 266V388" marker-end="url(#ah)"/><path class="ln dash" d="M405 266V320H295V388" marker-end="url(#ah)"/></g>
+        </svg>
+        <figcaption>Dashed lines are the less common path, such as a cache miss.</figcaption>
+      </figure>
+    </aside>
+
+    <div class="stack">
+
+      <section class="screen" data-n="1">
+        <h2><span class="rank">1</span>A cache is a copy kept closer to the reader</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>The same data is read again and again, and every read goes to the database. Each one costs a network hop and a read from memory or SSD, and the database serves all of them.</p>
+</div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Keep a copy where it is faster to reach. There are two common places:</p>
+          <ul>
+            <li><b>Inside each app process.</b> There is no hop, but every server holds its own copy, so two servers can give different answers and each one has to fill its own.</li>
+            <li><b>In a shared cache</b> such as Redis or Memcached. It is one hop of about 0.5 ms, but there is one copy that every server sees, and it survives an app restart.</li>
+          </ul>
+</div>
+        <div class="blk"><h3>The price</h3>
+          <p>Either way it is a copy. The database stays the source of truth, which is why a cache can usually drop an entry safely: it can be read again later. <a class="src" href="https://redis.io/docs/latest/develop/reference/eviction/" target="_blank" rel="noopener">source</a></p>
+          <p>The rest of this page uses a shared cache.</p>
+</div>
+      </section>
+
+      <section class="screen" data-n="2">
+        <h2><span class="rank">2</span>The app asks the cache first, and the hit rate decides the gain</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>Someone has to decide when the cache gets filled.</p>
+</div>
+        <div class="blk"><h3>The fix</h3>
+          <p>The common answer is to fill it on demand. The app asks the cache. On a hit it uses the answer. On a miss it reads the database and writes the result into the cache for next time. Facebook calls this a demand-filled look-aside cache. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a></p>
+</div>
+        <div class="blk"><h3>What a request touches</h3>
+          <ul>
+            <li><b>Hit:</b> app to cache and back, one hop.</li>
+            <li><b>Miss:</b> app to cache, then to the database, then the result goes into the cache. That is more work than having no cache.</li>
+          </ul>
+          <p>Take an example with a cache read of 0.5 ms and a database read of 5 ms. At 90 hits in 100, the average read is about 1.0 ms and 10 reads reach the database. At 99 hits in 100, the average is about 0.55 ms and 1 read does. Going from 90 to 99 percent cuts database reads tenfold, though the average time only about halves. The 5 ms is an example, not a measurement.</p>
+</div>
+        <div class="blk"><h3>The price</h3>
+          <p>You have to watch the hit rate. Redis counts <code>keyspace_hits</code> and <code>keyspace_misses</code>, and hits divided by their sum is the share of reads the cache answered. <a class="src" href="https://redis.io/docs/latest/develop/reference/eviction/" target="_blank" rel="noopener">source</a></p>
+</div>
+      </section>
+
+      <section class="screen" data-n="3">
+        <h2><span class="rank">3</span>The data changes, and the cache must find out</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>The cache holds a copy, and someone changes the original.</p>
+</div>
+        <div class="blk"><h3>The fix</h3>
+          <p>There are four common ways to keep the copy honest:</p>
+          <ul>
+            <li><b>Expire it.</b> Give each entry a time limit and let it disappear. It is simple, but the copy can be old until the limit. In Redis, overwriting a key with <code>SET</code> removes its time limit, so it has to be set again. <a class="src" href="https://redis.io/docs/latest/commands/expire/" target="_blank" rel="noopener">source</a></li>
+            <li><b>Delete on write.</b> Write the database, then delete the cache entry, and the next read refills it. Facebook deletes instead of updating because a delete is safe to repeat. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a></li>
+            <li><b>Write both</b> (write-through). The app updates the database and the cache together, so they can disagree if one write fails or the two interleave.</li>
+            <li><b>Write the cache first</b> (write-behind). It is fast, but the change is lost if the cache dies before the database has it.</li>
+          </ul>
+</div>
+        <div class="blk"><h3>The price</h3>
+          <p>The cache and the database are separate systems, so nothing updates both in one step. Delete on write has a race, shown in the diagram: a reader fetches the old value, a writer then updates the database and deletes the key, and the reader puts the old value back. It stays there until it expires.</p>
+          <p>Facebook closes this gap with leases. On a miss, the cache gives the reader a token, and the reader can only fill the cache if no delete has arrived since. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a> A short expiry time is a common backstop for races you did not foresee.</p>
+</div>
+      </section>
+
+      <section class="screen" data-n="4">
+        <h2><span class="rank">4</span>Memory is limited, so something gets dropped</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>The cache is in RAM, and RAM is smaller than the data. When it is full, a new entry needs room.</p>
+</div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Pick an eviction policy, which decides what to drop. Redis offers, among others:</p>
+          <ul>
+            <li><code>allkeys-lru</code>: drop the least recently used. The docs call it a good default when a subset of keys is read far more than the rest. <a class="src" href="https://redis.io/docs/latest/develop/reference/eviction/" target="_blank" rel="noopener">source</a></li>
+            <li><code>allkeys-lfu</code>: drop the least frequently used.</li>
+            <li><code>allkeys-random</code>: drop at random, for when all keys are read about equally.</li>
+            <li><code>noeviction</code>: drop nothing, and return an error to writes that need space.</li>
+          </ul>
+          <p>Redis approximates LRU by sampling a few keys and dropping the oldest of them, not by tracking an exact order. Memcached is a least-recently-used cache by default, and its entries can also expire after a set time. <a class="src" href="https://docs.memcached.org/" target="_blank" rel="noopener">source</a></p>
+</div>
+        <div class="blk"><h3>The price</h3>
+          <p>A dropped entry that is needed again is a miss. A bigger cache raises the hit rate, with diminishing returns once the hot data fits. Redis suggests comparing <code>evicted_keys</code> with <code>expired_keys</code> to see whether entries are going because of the policy or because the time limits are too short. <a class="src" href="https://redis.io/docs/latest/develop/reference/eviction/" target="_blank" rel="noopener">source</a></p>
+</div>
+      </section>
+
+      <section class="screen" data-n="5">
+        <h2><span class="rank">5</span>A popular entry expires, and everyone asks at once</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>When a very popular key disappears from the cache, whether by expiry, eviction or a delete, every request for it misses together. All of them go to the database for the same value, and the database sees a spike. This is often called a stampede, or a thundering herd.</p>
+</div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Let one request do the work.</p>
+          <ul>
+            <li><b>One refills, the rest wait.</b> The Facebook memcache hands out a lease token on a miss, at most once per key every 10 seconds. A request that arrives meanwhile is told to wait a short time, and by the retry the value is usually there. For the keys they measured over a week, the peak database query rate fell from 17,000 per second to 1,300. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a></li>
+            <li><b>Serve the old value briefly.</b> The same paper keeps a deleted value around for a short time so that readers who can tolerate stale data do not have to wait. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a></li>
+            <li><b>Spread out expiry times</b> with a little random jitter, and <b>refresh before expiry</b>, so popular keys do not all vanish together. These are common techniques, described here from general knowledge and not from the sources below.</li>
+          </ul>
+</div>
+        <div class="blk"><h3>The price</h3>
+          <p>Waiting requests are slower, serving old values means some users see stale data, and all of it is extra code to write and test.</p>
+</div>
+      </section>
+
+      <section class="screen" data-n="6">
+        <h2><span class="rank">6</span>The cache is empty or down</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>After a restart the cache is empty, and during an outage it does not answer. Either way, reads that it normally absorbs fall on the database. Facebook describes how losing memcache can overload backend services and cause further failures in a cascade. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a></p>
+</div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Decide what happens before it happens:</p>
+          <ul>
+            <li><b>Fall back to the database,</b> and know whether it can take the full read load.</li>
+            <li><b>Fail fast,</b> returning an error to protect the database.</li>
+            <li><b>A spare pool.</b> Facebook dedicates about 1% of its memcached servers to take over for failed ones. A client that gets no answer asks the spare, and entries there expire quickly. They report this cut client-visible failures by 99%, and turned 10% to 25% of failures into hits each day. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a></li>
+          </ul>
+          <p>Filling a new cache before it takes traffic is also common, and is from general knowledge here.</p>
+</div>
+        <div class="blk"><h3>The price</h3>
+          <p>A spare pool costs machines, and what it serves can be slightly stale.</p>
+</div>
+      </section>
+
+      <section class="screen" data-n="7">
+        <h2><span class="rank">7</span>One cache node cannot hold everything</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>One cache machine has limited memory and network capacity, and it is another single point of failure.</p>
+</div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Run several nodes and let the key decide which node holds it. In Memcached the client does this: it hashes the key to pick a server, and the servers do not know about each other, with no synchronization or replication between them. <a class="src" href="https://docs.memcached.org/" target="_blank" rel="noopener">source</a></p>
+</div>
+        <div class="blk"><h3>The price</h3>
+          <p>If a node dies, its share of keys is cold, and those reads go to the database. Rehashing the keys across the remaining nodes sounds natural, but Facebook warns that it can cascade: a single key can account for 20% of the requests to one server, and the node that inherits it may be overloaded. <a class="src" href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">source</a></p>
+          <p>A hot key also lives on one node, so adding nodes does not spread the reads of that key.</p>
+</div>
+      </section>
+
+      <div class="closing">
+        <h2>When not to cache</h2>
+        <ul>
+          <li><b>Data that must be exact,</b> such as an account balance. A stale copy is a wrong answer.</li>
+          <li><b>Data that is rarely read twice,</b> such as per-user pages. The hit rate stays low, and every miss costs extra.</li>
+          <li><b>Very large values.</b> They use memory fast and push out many small entries.</li>
+        </ul>
+        <p>Measure the hit rate before adding one, and remember the cache is a copy: the database is where the truth lives.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="note">Write-through, write-behind, jitter, refresh before expiry, warming a new cache and the 5 ms database read are from general knowledge or examples, not from these sources. The 0.5 ms hop is the rounded figure from the Latency Ladder page.</p>
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ol>
+      <li>Redis documentation, <a href="https://redis.io/docs/latest/develop/reference/eviction/" target="_blank" rel="noopener">key eviction</a> (policies, approximated LRU, hit rate from <code>INFO</code>).</li>
+      <li>Redis documentation, <a href="https://redis.io/docs/latest/commands/expire/" target="_blank" rel="noopener">EXPIRE</a> (when a time limit is cleared, how expired keys are removed).</li>
+      <li>Memcached documentation, <a href="https://docs.memcached.org/" target="_blank" rel="noopener">overview</a> (client-side hashing, servers unaware of each other, LRU and expiry).</li>
+      <li>Nishtala et al., <a href="https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf" target="_blank" rel="noopener">Scaling Memcache at Facebook</a>, NSDI 2013 (look-aside caching, delete on write, leases, stale values, spare pool).</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var NS = "http://www.w3.org/2000/svg";
+    function mk(cls, x, y, w, parent, h) {
+      var e = document.createElementNS(NS, "rect");
+      e.setAttribute("class", cls); e.setAttribute("x", x); e.setAttribute("y", y);
+      e.setAttribute("width", w); e.setAttribute("height", h || w); e.setAttribute("rx", 1);
+      parent.appendChild(e);
+    }
+    function grid(id, x0, miss) {
+      var g = document.getElementById(id);
+      for (var i = 0; i < 100; i++) {
+        mk(i >= 100 - miss ? "miss" : "hit", x0 + (i % 20) * 11, 474 + Math.floor(i / 20) * 6, 9, g, 4);
+      }
+    }
+    var svg = document.getElementById("bk");
+    grid("g90", 20, 10); grid("g99", 270, 1);
+    var cells = document.getElementById("cells");
+    for (var c = 0; c < 24; c++) {
+      mk("cell" + (c >= 18 ? " old" : ""), 360 + (c % 8) * 18, 212 + Math.floor(c / 8) * 22, 14, cells);
+    }
+    var groups = svg ? svg.querySelectorAll("g[data-s]") : [];
+    var prog = document.getElementById("prog");
+    function show(n) {
+      groups.forEach(function (g) {
+        var on = g.getAttribute("data-s").split(" ").indexOf(String(n)) > -1;
+        g.classList.toggle("show", on);
+        g.classList.toggle("new", on && g.getAttribute("data-new") === String(n));
+      });
+      if (prog) prog.textContent = "screen " + n + " of 7";
+    }
+    show(1);
+    if (!("IntersectionObserver" in window)) { show(7); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) show(e.target.getAttribute("data-n"));
+      });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    document.querySelectorAll(".screen[data-n]").forEach(function (s) { io.observe(s); });
+  })();
+</script>
