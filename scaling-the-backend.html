@@ -114,10 +114,15 @@
           <g data-s="1" data-new="1" style="--c: var(--cpu)">
             <rect class="ent" x="140" y="150" width="150" height="270" rx="6"/>
             <text class="tb" x="150" y="168">one machine</text>
-            <rect class="ent" x="150" y="178" width="130" height="46" rx="4" style="--c: var(--cpu)"/>
-            <text class="tb" x="215" y="205" text-anchor="middle">app</text>
-            <path class="ln" d="M215 224V336" marker-end="url(#ah)"/>
-            <text class="m" x="222" y="276">RAM, then SSD</text>
+            <rect class="ent" x="150" y="176" width="130" height="28" rx="4" style="--c: var(--hop)"/>
+            <text class="tb" x="215" y="195" text-anchor="middle">nginx</text>
+            <path class="ln" d="M215 204V212" marker-end="url(#ah)"/>
+            <rect class="ent" x="150" y="214" width="130" height="64" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="160" y="232">gunicorn</text>
+            <rect class="ent" x="160" y="242" width="26" height="26" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="192" y="242" width="26" height="26" rx="3" style="--c: var(--cpu)"/><rect class="ent" x="224" y="242" width="26" height="26" rx="3" style="--c: var(--cpu)"/>
+            <text class="m" x="258" y="260">workers</text>
+            <path class="ln" d="M215 278V336" marker-end="url(#ah)"/>
+            <text class="m" x="222" y="312">RAM, then SSD</text>
             <rect class="ent" x="150" y="340" width="130" height="64" rx="4" style="--c: var(--ssd)"/>
             <text class="tb" x="215" y="366" text-anchor="middle">database</text>
             <text class="m" x="215" y="382" text-anchor="middle">on SSD</text>
@@ -236,12 +241,12 @@
         <div class="blk"><h3>The problem</h3>
           <p>None yet. This is a new site with a few requests a second and a small amount of data. It is the baseline the rest of the page builds on.</p></div>
         <div class="blk"><h3>What it is</h3>
-          <p>One machine runs the app and the database.</p></div>
+          <p>One machine runs nginx, gunicorn with several worker processes that run your code, and the database.</p></div>
         <div class="blk"><h3>What a request touches</h3>
           <p>CPU, then RAM (the operating system's cache and the database's own cache), then SSD on a miss. No network hops.</p></div>
         <div class="blk"><h3>The price</h3>
           <p>It is simple and fast, and consistency is free because there is only one copy to disagree with. But it is one point of failure. While the machine is down, so is the site. The data survives a crash because it is on SSD, but it is lost if the disk is, unless it was backed up.</p>
-          <p>Many sites never need more. Add a piece only when a measured problem calls for it.</p></div>
+          <p>Many sites never need more. When it does get slow, the first moves are cheap ones: tune the slow queries, add workers, or move to a bigger machine. Add a new piece only when a measured problem calls for it. The screens below are in a teaching order, not a fixed history. Real systems often add a cache or a replica before a second app server.</p></div>
       </section>
 
       <section class="screen" data-n="2">
@@ -257,10 +262,15 @@
       </section>
 
       <section class="screen" data-n="3">
-        <h2><span class="rank">3</span>One app server is the limit, and a single point of failure</h2>
+        <h2><span class="rank">3</span>One machine cannot be big enough, and cannot be allowed to fail</h2>
         <div class="blk"><h3>The problem</h3>
-          <p>The app server's CPU is maxed out, requests queue and latency climbs. If it dies, the site is down.</p>
-          <p>To see why, look at how many requests one server can take at once. Each client connection is state the operating system keeps in memory, reached by the server program through a file descriptor. A typical Python setup puts nginx in front of gunicorn:</p>
+          <p>You have already tuned queries, added workers and bought a bigger machine. Three things still push you to more than one app server:</p>
+          <ul>
+            <li><b>Size has a ceiling.</b> A machine has a fixed number of cores and amount of memory, and the biggest ones cost far more per unit of capacity.</li>
+            <li><b>Availability.</b> If the one app server dies, the site is down.</li>
+            <li><b>Deploys and restarts.</b> Replacing the code on a single server drops requests unless a second server takes them meanwhile.</li>
+          </ul>
+          <p>To see how much one server can take, look at how many requests it can run at once. Each client connection is state the operating system keeps in memory, reached by the server program through a file descriptor. A typical Python setup puts nginx in front of gunicorn:</p>
           <ul>
             <li>nginx is a reverse proxy. It handles the secure handshake, serves static files, and holds the slow client connections. It is event-driven, with about one worker process per core, so each connection costs a file descriptor and a little memory, not a thread. <a class="src" href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">source</a> Its own limit is set by <code>worker_connections</code> (default 512 per worker) and the open-file limit. <a class="src" href="https://nginx.org/en/docs/ngx_core_module.html#worker_connections" target="_blank" rel="noopener">source</a></li>
             <li>gunicorn runs your Python code in a few worker processes. The default sync worker handles one request at a time and has no keep-alive, and the docs say it needs a buffering proxy such as nginx in production. They suggest starting at (2 × cores) + 1 workers. <a class="src" href="https://gunicorn.org/design/" target="_blank" rel="noopener">source</a></li>
