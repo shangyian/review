@@ -1,0 +1,499 @@
+<title>Backpressure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* One small model, evaluated step by step; a sticky panel changes with the screen and the controls. */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --track: #E6EAF0; --rule: #CBD3DD;
+    --cpu: #8DB8E8; --ram: #6A9FDB; --ssd: #4A85CB; --hop: #2F6BB5; --ocean: #123A78; --hl: #D9480F;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+      --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+    --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
+  a { color: inherit; }
+
+  .layout { display: grid; grid-template-columns: 520px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .layout aside { position: sticky; top: 16px; }
+  .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .layout figcaption { font-size: 0.75rem; color: var(--muted); }
+  .layout svg { width: 100%; max-height: calc(100vh - 60px); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout aside { position: static; max-width: 560px; }
+    .layout svg { max-height: none; }
+  }
+
+  .ml .t { fill: var(--fg); font: 11px var(--mono); }
+  .ml .tb { fill: var(--fg); font: 600 11px var(--mono); }
+  .ml .m { fill: var(--muted); font: 10px var(--mono); }
+  .ml .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  .ml .thin { stroke: var(--rule); stroke-width: 1; fill: none; }
+  .ml .dash { stroke-dasharray: 5 4; }
+  .ml rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
+  .ml .pos { fill: var(--ocean); stroke: var(--ocean); stroke-width: 1.5; }
+  .ml .neg { fill: var(--bg); stroke: var(--ssd); stroke-width: 1.5; }
+  .ml .err { fill: none; stroke: var(--fg); stroke-width: 1.25; stroke-dasharray: 2 2; }
+  .ml .testring { fill: none; stroke: var(--hop); stroke-width: 2; }
+  .ml .shade { fill: var(--track); }
+  .ml .bar { fill: var(--ram); }
+  .ml .bar.sel { fill: var(--ocean); }
+  .ml .barbg { fill: var(--track); }
+  .ml .handle { fill: var(--fg); }
+  .ml .cell { fill: var(--track); stroke: var(--rule); }
+  .ml .cell.good { fill: var(--cpu); }
+  .ml g[data-s] { display: none; }
+  .ml g[data-s].show { display: inline; }
+  .ml #strip-hit { cursor: ew-resize; fill: transparent; }
+
+  .stack { display: flex; flex-direction: column; min-width: 0; }
+  .screen { display: flex; flex-direction: column; gap: 12px; padding-block: 28px; border-top: 1px solid var(--rule); min-height: 70vh; }
+  .screen:first-child { border-top: 0; padding-top: 0; }
+  .screen h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .screen h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .blk h3 { margin: 0 0 2px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .blk p { margin: 0 0 6px; max-width: 66ch; }
+  .blk ul { margin: 0 0 6px; padding-left: 1.1em; max-width: 66ch; display: flex; flex-direction: column; gap: 4px; }
+  .blk code { font-family: var(--mono); font-size: 0.875em; }
+  .hero { display: flex; flex-direction: column; gap: 12px; }
+  .hero h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .hero h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .hero svg { width: 100%; height: auto; max-width: 1168px; }
+  .ml a text { fill: var(--hop); text-decoration: underline; cursor: pointer; }
+  .ml .soon { fill: var(--muted); font: italic 12px var(--mono); }
+  .hero svg :is(rect, path, text) { transition: stroke 0.2s, fill 0.2s; }
+  .hero svg.looping rect.ent[data-loop] { stroke: var(--hl); }
+  .hero svg.looping path[data-loop] { stroke: var(--hl); stroke-width: 2.5; marker-end: url(#hah-hl); }
+  .hero svg.looping text[data-loop] { fill: var(--hl); }
+  .hero svg.looping path[data-loop]:not([marker-end]) { marker-end: none; }
+  .hover-note text { text-decoration: underline dotted; cursor: help; }
+  .hover-note:focus { outline: none; }
+  .ml .hb { fill: var(--fg); font: 600 13px var(--mono); }
+  .ml .ht { fill: var(--fg); font: 12px var(--mono); }
+  .ml .hm { fill: var(--muted); font: 12px var(--mono); }
+  .ml rect.bar6 { fill: var(--c); }
+  .ml .big { fill: var(--fg); font: 600 26px var(--mono); }
+  .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 12px; background: var(--track); border-radius: 4px; max-width: 66ch; font-size: 0.9375rem; }
+  .ctl label { display: flex; align-items: center; gap: 8px; }
+  .ctl input[type="range"] { width: 180px; accent-color: var(--hop); }
+  .ctl output { font-family: var(--mono); font-size: 0.875rem; min-width: 3.5em; }
+  .ctl button { font: inherit; padding: 2px 10px; border: 1px solid var(--muted); background: var(--bg); color: var(--fg); border-radius: 4px; cursor: pointer; }
+  .tag { margin: -6px 0 0; font: 12px var(--mono); color: var(--muted); max-width: 66ch; }
+  .note { color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
+</style>
+
+<main class="wrap">
+  <header>
+    <a class="back" href="scaling-the-backend.html">&larr; Scaling the Backend</a>
+    <h1>Backpressure</h1>
+    <p class="lede">When work arrives faster than it can finish, something has to give. This page runs one small server through a traffic spike and adds one fix per screen. The simulation is live, so the controls change the curves.</p>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <figure>
+        <svg class="ml" id="ml" viewBox="0 0 520 600" role="img" aria-labelledby="ml-title">
+          <title id="ml-title">A server with 8 workers finishing 80 requests per second, simulated through a traffic spike. The top shows callers, an optional limit, the queue and the workers. Three charts show requests waiting, requests per second arriving, finished in time, wasted and rejected, and the wait for a new request. The last screen shows the queues at each layer of a system.</title>
+          <defs>
+            <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
+            </marker>
+          </defs>
+          <text class="m" id="prog" x="10" y="14">screen 1 of 6</text>
+
+          <g data-s="1 2 3 4 5" id="bp-top">
+            <rect class="ent" x="20" y="40" width="100" height="58" rx="4" style="--c: var(--cpu)"/>
+            <text class="tb" x="30" y="60">callers</text>
+            <text class="m" x="30" y="76" id="t-want">wants 60/s</text>
+            <text class="m" x="30" y="90" id="t-want2"></text>
+            <rect class="ent" x="214" y="40" width="130" height="58" rx="4" style="--c: var(--ssd)"/>
+            <text class="tb" x="224" y="60">queue</text>
+            <text class="m" x="224" y="76" id="t-lim">no limit</text>
+            <rect class="ent" x="388" y="40" width="112" height="58" rx="4" style="--c: var(--hop)"/>
+            <text class="tb" x="398" y="60">8 workers</text>
+            <text class="m" x="398" y="76">100 ms each</text>
+            <text class="m" x="398" y="90">= 80 per second</text>
+            <path class="ln" d="M344 69H386" marker-end="url(#ah)"/>
+          </g>
+          <g data-s="1 2"><path class="ln" d="M120 69H212" marker-end="url(#ah)"/></g>
+          <g data-s="3 4 5">
+            <path class="ln" d="M120 69H138" marker-end="url(#ah)"/>
+            <rect class="ent" x="140" y="50" width="62" height="38" rx="4" style="--c: var(--ocean)"/>
+            <text class="tb" x="171" y="67" text-anchor="middle">limits</text>
+            <text class="m" x="171" y="80" text-anchor="middle">503, 429</text>
+            <path class="ln" d="M202 69H212" marker-end="url(#ah)"/>
+            <path class="ln dash" d="M171 88V112" marker-end="url(#ah)"/>
+            <text class="m" x="178" y="108">rejected at once</text>
+          </g>
+          <g data-s="4">
+            <path class="ln dash" d="M150 128H70V100" marker-end="url(#ah)"/>
+            <text class="m" x="76" y="124">slow down</text>
+          </g>
+          <g data-s="5">
+            <path class="ln dash" d="M44 40V26H96V38" marker-end="url(#ah)"/>
+            <text class="m" x="104" y="30">retry</text>
+          </g>
+
+          <g data-s="1 2 3 4 5" id="bp-charts">
+            <rect id="band1" class="shade" x="0" y="0" width="0" height="0"/>
+            <text class="tb" x="30" y="150" id="c1-title">requests waiting</text>
+            <rect x="40" y="162" width="460" height="100" class="thin"/>
+            <g id="c1"></g>
+            <text class="tb" x="30" y="290">per second</text>
+            <g id="c2-legend"></g>
+            <rect x="40" y="302" width="460" height="120" class="thin"/>
+            <g id="c2"></g>
+            <text class="tb" x="30" y="450" id="c3-title">wait for a new request (seconds)</text>
+            <rect x="40" y="462" width="460" height="100" class="thin"/>
+            <g id="c3"></g>
+            <text class="m" x="40" y="580">seconds</text>
+            <text class="m" x="40" y="594" style="display:none"></text>
+            <text class="m" x="236" y="580">60</text><text class="m" x="342" y="580">120</text><text class="m" x="468" y="580">180</text>
+          </g>
+
+          <g data-s="6" id="bp-layers"></g>
+        </svg>
+        <figcaption>Simulated server, run in your browser.</figcaption>
+      </figure>
+    </aside>
+
+    <div class="stack">
+
+      <section class="screen" data-n="1" id="sec-1">
+        <h2><span class="rank">1</span>Work arrives faster than it finishes</h2>
+        <div class="blk"><h3>What you see</h3>
+          <p>A server has 8 workers, and each finishes a request in 100 ms, so the server completes 80 requests per second. Normally 60 arrive each second. From second 20 to second 60 there is a spike. A request that cannot start at once waits in a queue.</p></div>
+        <div class="ctl">
+          <label>requests per second during the spike <input type="range" min="60" max="160" step="5" value="120" data-k="spike"><output data-out="spike">120/s</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>Every second that arrivals exceed 80, the queue grows by the difference. At 120 per second it grows by 40 each second, so by second 60 it holds about 1,700 requests and a new arrival would wait about 21 seconds. The arithmetic is the same Little's law used on the <a href="scaling-the-backend.html">backend page</a>.</p>
+          <p>When the spike ends, the queue does not vanish. The server has only 20 per second to spare (80 finished, 60 arriving), so draining takes around 80 more seconds. Nothing is wrong with any single request, because each takes 100 ms once it reaches a worker. The waiting is the whole problem, and it lasts long after the cause is gone.</p></div>
+      </section>
+
+      <section class="screen" data-n="2" id="sec-2">
+        <h2><span class="rank">2</span>An unbounded queue turns overload into delay, then waste</h2>
+        <div class="blk"><h3>What you see</h3>
+          <p>The same spike, now with callers who give up after 5 seconds. A caller abandons a request that waited longer, but nothing tells the server, so the abandoned request stays in the queue.</p></div>
+        <div class="ctl">
+          <label><input type="checkbox" data-k="timeouts"> callers give up after 5 seconds</label>
+          <label>spike <input type="range" min="60" max="160" step="5" value="120" data-k="spike"><output data-out="spike">120/s</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>Wait time is the queue length divided by 80, so once more than 400 requests are waiting, a new arrival waits longer than the callers' patience. From then on the server works through requests nobody is waiting for. In the second chart the blue line (finished in time) falls toward zero and the orange line (wasted) takes over. Within seconds of the queue passing that mark, almost none of the 80 requests per second finished are useful. It stays that way well after the spike ends, because the queue is still full of abandoned requests.</p>
+          <p>The server is as busy as ever and is producing almost nothing useful. AWS describes the same thing: when a request times out, all the progress made on it is wasted, and it calls the share of work that finishes in time <em>goodput</em>. <a class="src" href="https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload" target="_blank" rel="noopener">source</a> Memory also grows with the queue. Google's SRE book says that without protection, work piles up and tasks eventually run out of memory and crash. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a></p></div>
+      </section>
+
+      <section class="screen" data-n="3" id="sec-3">
+        <h2><span class="rank">3</span>Bound the queue and say no early</h2>
+        <div class="blk"><h3>What you see</h3>
+          <p>Two limits sit in front of the queue: a cap on how many requests may wait, and an optional cap on how many are admitted each second. A request over either limit is rejected at once, with an HTTP 503 or 429, instead of being queued.</p></div>
+        <div class="ctl">
+          <label><input type="checkbox" data-k="cap"> bounded queue</label>
+          <label>at most <input type="range" min="20" max="500" step="10" value="100" data-k="capN"><output data-out="capN">100</output> waiting</label>
+          <label><input type="checkbox" data-k="rate"> admit at most 80 per second</label>
+          <label>spike <input type="range" min="60" max="160" step="5" value="120" data-k="spike"><output data-out="spike">120/s</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>A bound turns unlimited delay into a known worst case. With 100 waiting and 80 finishing per second, nobody waits more than about 1.25 seconds, well inside the 5-second patience. Useful work stays near the server's capacity through the spike, and recovery is immediate when it ends.</p>
+          <p>An admission rate limit does the same job earlier and keeps the queue nearly empty. Its bigger use is fairness: a per-caller limit gives one heavy caller errors while the others carry on. Google's SRE book sets quotas per customer this way, and RFC 6585 defines status 429 for "too many requests". <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a> <a class="src" href="https://www.rfc-editor.org/rfc/rfc6585#section-4" target="_blank" rel="noopener">source</a> The simulation has one class of caller, so it cannot show the fairness part.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Rejected callers get errors and must cope. Rejecting is cheap but not free: the SRE book notes that a backend can spend most of its CPU on rejections, and this simulation charges a tenth of a request for each one, an assumption of mine.</p>
+          <p>You also have to choose whom to drop. AWS suggests bounding the queue, discarding requests that have waited too long, and considering newest-first service where the protocol allows it. <a class="src" href="https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload" target="_blank" rel="noopener">source</a> Google sheds the least important traffic first, using criticality levels. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a></p></div>
+      </section>
+
+      <section class="screen" data-n="4" id="sec-4">
+        <h2><span class="rank">4</span>Tell the caller to slow down</h2>
+        <div class="blk"><h3>What you see</h3>
+          <p>Rejecting says no to one request. Backpressure goes further and tells callers to send less. Here, callers cut their send rate by 30% after any second with a rejection and add 10 requests per second back after a clean second. The dashed line is what they wanted to send.</p></div>
+        <div class="ctl">
+          <label><input type="checkbox" data-k="polite"> callers slow down when rejected</label>
+          <label><input type="checkbox" data-k="cap"> bounded queue</label>
+          <label>spike <input type="range" min="60" max="160" step="5" value="120" data-k="spike"><output data-out="spike">120/s</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>With the default spike, slowing down cuts rejections from about 45 per second to about 3 and lifts useful work from about 75 to 79 per second. Callers stop sending requests that were going to be refused anyway.</p>
+          <p>The signal can travel several ways. A 429 response can carry a <code>Retry-After</code> header saying how long to wait. <a class="src" href="https://www.rfc-editor.org/rfc/rfc6585#section-4" target="_blank" rel="noopener">source</a> A full bounded buffer can make a fast producer wait. In Reactive Streams, the receiver announces how many more items it wants and the sender may not exceed that, so the queues between components stay bounded. <a class="src" href="https://github.com/reactive-streams/reactive-streams-jvm/blob/master/README.md" target="_blank" rel="noopener">source</a> Google's clients throttle themselves: each tracks its recent requests and accepts and, once requests pass twice the accepts, rejects new ones locally with a rising probability. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a> The rule in this simulation is a simpler stand-in for that.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Held-back work has to go somewhere: the caller queues it, the user waits, or it is dropped. For sources that cannot be slowed, such as clock ticks or mouse movements, the Reactive Streams README says the publisher must buffer or drop. <a class="src" href="https://github.com/reactive-streams/reactive-streams-jvm/blob/master/README.md" target="_blank" rel="noopener">source</a></p></div>
+      </section>
+
+      <section class="screen" data-n="5" id="sec-5">
+        <h2><span class="rank">5</span>Retries make overload worse</h2>
+        <div class="blk"><h3>What you see</h3>
+          <p>A caller whose request fails or times out tries again, up to three attempts in total. Plain retries come one second after a failure. Careful retries wait 1, 2, 4 seconds with random jitter, and only while retries stay under 10% of requests. Choose how callers retry.</p></div>
+        <div class="ctl" role="radiogroup" aria-label="How callers retry">
+          <label><input type="radio" name="retry" value="off"> no retries</label>
+          <label><input type="radio" name="retry" value="plain" checked> plain retries</label>
+          <label><input type="radio" name="retry" value="careful"> careful retries</label>
+          <label><input type="checkbox" data-k="cap"> bounded queue</label>
+          <label>spike <input type="range" min="60" max="160" step="5" value="120" data-k="spike"><output data-out="spike">120/s</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>Retries add load exactly when the server can least afford it. With plain retries and no queue limit, arrivals reach 360 per second, three times the spike, because abandoned requests come back. Useful work stays near zero long after the spike ends.</p>
+          <p>The layered version is worse. AWS gives an example of a call passing through five layers with three retries at each, where the load on the database rises 243 times, which is 3 to the fifth power. <a class="src" href="https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter" target="_blank" rel="noopener">source</a> The usual limits:</p>
+          <ul>
+            <li><b>Retry in one place.</b> Google lets only the layer directly above the rejecting one retry. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a></li>
+            <li><b>Budget the retries.</b> Three attempts per request limits the worst case to just under 3 times the load. A per-client rule of retries under 10% of requests keeps it near 1.1 times. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a></li>
+            <li><b>Back off with jitter,</b> so failed callers do not all come back at the same instant. <a class="src" href="https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter" target="_blank" rel="noopener">source</a></li>
+            <li><b>Retry only what is safe to repeat.</b> AWS notes that calls with side effects are not safe to retry unless they are idempotent. <a class="src" href="https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter" target="_blank" rel="noopener">source</a></li>
+          </ul>
+          <p>Switch to careful retries without a queue limit: the extra load shrinks, but the queue still fills and useful work still collapses. Then tick "bounded queue". The two work together, and useful work stays near capacity.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Fewer retries means some callers give up and see an error instead of eventually succeeding.</p></div>
+      </section>
+
+      <section class="screen" data-n="6" id="sec-6">
+        <h2><span class="rank">6</span>Every layer has its own queue</h2>
+        <div class="blk"><h3>What you see</h3>
+          <p>A request passes through several waiting lines before it finishes. Each one has the same three questions: what fills it, how it says no, and what to watch.</p>
+          <ul>
+            <li><b>Accept queue:</b> connections wait for a free worker. See <a href="web-server-models.html">how web servers run many requests at once</a>.</li>
+            <li><b>Worker pool queue:</b> requests wait because every worker is busy.</li>
+            <li><b>Connection pool:</b> requests wait for one of the limited database connections.</li>
+            <li><b>Message queue:</b> consumers fall behind producers, and the gap is the consumer lag. See the queue screen in <a href="scaling-the-backend.html">Scaling the Backend</a>.</li>
+            <li><b>Another service:</b> its own queues, and its 429 or 503 comes back to you.</li>
+          </ul></div>
+        <div class="blk"><h3>What to watch</h3>
+          <p>Watch how long the oldest item has waited, not just how many arrive. AWS points out that queues hide age: a server can have no idea how long a request sat in line. <a class="src" href="https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload" target="_blank" rel="noopener">source</a> Compare goodput with total throughput, and watch the rate of rejections. Say no as early as possible, and make the no cheap.</p></div>
+        <p class="note">The simulation has one class of caller, a fixed 100 ms service time, a fixed 5-second patience, and a rejection that costs a tenth of a request. Those figures, the 70% and +10 slow-down rule, the 1-2-4 second backoff and the arithmetic on screen 1 are examples of mine, not from the sources.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ol>
+      <li>Google, <em>Site Reliability Engineering</em>, <a href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">Handling Overload</a> (load shedding, criticality, per-customer quotas, retry budgets, client-side throttling).</li>
+      <li>Amazon Builders' Library, <a href="https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter" target="_blank" rel="noopener">Timeouts, retries and backoff with jitter</a> (retry amplification, jitter, idempotency).</li>
+      <li>Amazon Builders' Library, <a href="https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload" target="_blank" rel="noopener">Using load shedding to avoid overload</a> (goodput, wasted work, bounded queues).</li>
+      <li>Reactive Streams, <a href="https://github.com/reactive-streams/reactive-streams-jvm/blob/master/README.md" target="_blank" rel="noopener">README</a> (demand signalling and bounded buffers).</li>
+      <li>IETF, <a href="https://www.rfc-editor.org/rfc/rfc6585#section-4" target="_blank" rel="noopener">RFC 6585, section 4</a> (status 429 and <code>Retry-After</code>).</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var NS = "http://www.w3.org/2000/svg";
+    function $(id) { return document.getElementById(id); }
+    function rng(seed) {
+      var a = seed >>> 0;
+      return function () {
+        a = (a + 0x6D2B79F5) >>> 0;
+        var t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function el(tag, attrs, parent, text) {
+      var e = document.createElementNS(NS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (text !== undefined) e.textContent = text;
+      parent.appendChild(e);
+      return e;
+    }
+    function clear(g) { while (g.firstChild) g.removeChild(g.firstChild); }
+
+    // one second per step: 80 finished per second, a spike from second 20 to 60
+    function simulate(P) {
+      var N = 180, MU = 80, TC = 5, queue = [], due = {}, r = rng(7), acc = 0, c = 1e9, tokens = 0;
+      var o = { q: [], off: [], good: [], waste: [], rej: [], wait: [], want: [], sent: [] }, t, i;
+      function schedule(att, now) {
+        if (P.retry === "off" || att > 2) return;
+        var d = 1;
+        if (P.retry === "careful") {
+          if (tokens < 1) return;
+          tokens -= 1;
+          d = Math.max(1, Math.round(Math.pow(2, att - 1) * (0.5 + r()) * 2));
+        }
+        (due[now + d] = due[now + d] || []).push(att);
+      }
+      for (t = 0; t < N; t++) {
+        var want = (t >= 20 && t < 60) ? P.spike : 60;
+        var sent = Math.min(want, P.polite ? c : 1e9);
+        acc += sent;
+        var n = Math.floor(acc);
+        acc -= n;
+        tokens = Math.min(100, tokens + 0.1 * n);
+        var batch = [];
+        for (i = 0; i < n; i++) batch.push(0);
+        (due[t] || []).forEach(function (a) { batch.push(a); });
+        var adm = 0, rej = 0;
+        batch.forEach(function (att) {
+          var no = (P.rate !== null && adm >= P.rate) || (P.cap !== null && queue.length >= P.cap);
+          if (no) { rej++; schedule(att + 1, t); }
+          else { queue.push({ t0: t, att: att, gone: false }); adm++; }
+        });
+        if (P.timeouts) queue.forEach(function (q) { if (!q.gone && t - q.t0 >= TC) { q.gone = true; schedule(q.att + 1, t); } });
+        var good = 0, waste = 0, k = 0, room = Math.max(0, Math.floor(MU - 0.1 * rej)), before = queue.length;
+        while (k < room && queue.length) {
+          var q = queue.shift();
+          k++;
+          if (q.gone) waste++; else good++;
+        }
+        if (P.polite) { if (rej > 0) c = Math.max(10, sent * 0.7); else c = Math.min(1e9, c + 10); }
+        o.q.push(before); o.off.push(batch.length); o.good.push(good); o.waste.push(waste); o.rej.push(rej);
+        o.wait.push(before / MU); o.want.push(want); o.sent.push(sent);
+      }
+      return o;
+    }
+
+    var S = { spike: 120, timeouts: false, cap: false, capN: 100, rate: false, polite: false, retry: "off" };
+    var PRESET = {
+      1: { timeouts: false, cap: false, rate: false, polite: false, retry: "off" },
+      2: { timeouts: true, cap: false, rate: false, polite: false, retry: "off" },
+      3: { timeouts: true, cap: true, rate: false, polite: false, retry: "off" },
+      4: { timeouts: true, cap: true, rate: false, polite: true, retry: "off" },
+      5: { timeouts: true, cap: false, rate: false, polite: false, retry: "plain" }
+    };
+    var current = 1;
+
+    function X(t) { return 40 + t * (460 / 180); }
+    function nice(v, steps) {
+      for (var i = 0; i < steps.length; i++) if (steps[i] >= v * 1.05) return steps[i];
+      return steps[steps.length - 1];
+    }
+    function line(arr, top, h, max, style) {
+      var d = arr.map(function (v, t) { return (t ? "L" : "M") + X(t).toFixed(1) + " " + (top + h - Math.min(v, max) / max * h).toFixed(1); }).join("");
+      return { "class": "ln", d: d, style: style, fill: "none" };
+    }
+    function bands(g, top, h) {
+      el("rect", { "class": "shade", x: X(20), y: top, width: X(60) - X(20), height: h }, g);
+    }
+    function drawCharts(o) {
+      var c1 = $("c1"), c2 = $("c2"), c3 = $("c3"), lg = $("c2-legend");
+      clear(c1); clear(c2); clear(c3); clear(lg);
+      var qMax = nice(Math.max.apply(null, o.q.concat(S.cap ? [S.capN] : [10])), [10, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]);
+      bands(c1, 162, 100);
+      el("path", line(o.q, 162, 100, qMax, "stroke: var(--hop); stroke-width: 2"), c1);
+      el("text", { "class": "m", x: 36, y: 172, "text-anchor": "end" }, c1, String(qMax));
+      el("text", { "class": "m", x: 36, y: 262, "text-anchor": "end" }, c1, "0");
+      el("text", { "class": "m", x: X(40), y: 176, "text-anchor": "middle" }, c1, "spike");
+      if (S.cap) {
+        var cy = 262 - S.capN / qMax * 100;
+        el("path", { "class": "ln dash", d: "M40 " + cy + "H500" }, c1);
+        el("text", { "class": "m", x: 496, y: cy - 4, "text-anchor": "end" }, c1, "limit " + S.capN);
+      }
+      var m2 = nice(Math.max.apply(null, o.off.concat(o.want)), [100, 150, 200, 300, 400, 500]);
+      bands(c2, 302, 120);
+      el("text", { "class": "m", x: 36, y: 312, "text-anchor": "end" }, c2, String(m2));
+      el("text", { "class": "m", x: 36, y: 422, "text-anchor": "end" }, c2, "0");
+      if (S.polite) el("path", line(o.want, 302, 120, m2, "stroke: var(--muted); stroke-width: 1.25; stroke-dasharray: 4 3"), c2);
+      el("path", line(o.off, 302, 120, m2, "stroke: var(--muted); stroke-width: 1.5"), c2);
+      el("path", line(o.waste, 302, 120, m2, "stroke: var(--hl); stroke-width: 2"), c2);
+      el("path", line(o.rej, 302, 120, m2, "stroke: var(--ocean); stroke-width: 1.5; stroke-dasharray: 2 2"), c2);
+      el("path", line(o.good, 302, 120, m2, "stroke: var(--ssd); stroke-width: 2.5"), c2);
+      var items = [["arriving", "var(--muted)", ""], ["done in time", "var(--ssd)", ""], ["wasted", "var(--hl)", ""], ["rejected", "var(--ocean)", "2 2"]];
+      var lx = 112;
+      items.forEach(function (it) {
+        el("path", { "class": "ln", d: "M" + lx + " 286H" + (lx + 16), style: "stroke:" + it[1] + ";stroke-width:2;" + (it[2] ? "stroke-dasharray:" + it[2] : "") }, lg);
+        el("text", { "class": "m", x: lx + 20, y: 290 }, lg, it[0]);
+        lx += 104;
+      });
+      var wMax = nice(Math.max.apply(null, o.wait.concat([6])), [10, 25, 50, 100, 250]);
+      bands(c3, 462, 100);
+      el("path", line(o.wait, 462, 100, wMax, "stroke: var(--hop); stroke-width: 2"), c3);
+      el("text", { "class": "m", x: 36, y: 472, "text-anchor": "end" }, c3, String(wMax));
+      el("text", { "class": "m", x: 36, y: 562, "text-anchor": "end" }, c3, "0");
+      if (S.timeouts) {
+        var ty = 562 - 5 / wMax * 100;
+        el("path", { "class": "ln dash", d: "M40 " + ty + "H500" }, c3);
+        el("text", { "class": "m", x: 496, y: ty - 4, "text-anchor": "end" }, c3, "callers give up at 5 s");
+      }
+    }
+    function drawLayers() {
+      var g = $("bp-layers");
+      clear(g);
+      var rows = [
+        ["accept queue", "connections wait for a worker", "refuse or drop new connections"],
+        ["worker pool queue", "every worker is busy", "a bounded queue rejects, such as a 503"],
+        ["connection pool", "every database connection is in use", "the wait times out and the request errors"],
+        ["message queue", "consumers fall behind producers", "block or reject producers, or drop work"],
+        ["another service", "its own queues fill", "a 429 or 503 comes back to you"]
+      ];
+      el("text", { "class": "tb", x: 30, y: 36 }, g, "A request waits at each layer");
+      el("text", { "class": "m", x: 30, y: 54 }, g, "fills when ... and says no by ...");
+      rows.forEach(function (r, i) {
+        var y = 74 + i * 100;
+        el("rect", { "class": "ent", x: 30, y: y, width: 460, height: 78, rx: 4, style: "--c: var(--" + ["cpu", "ram", "ssd", "hop", "ocean"][i] + ")" }, g);
+        el("text", { "class": "tb", x: 44, y: y + 24 }, g, r[0]);
+        el("text", { "class": "m", x: 44, y: y + 46 }, g, "fills: " + r[1]);
+        el("text", { "class": "m", x: 44, y: y + 64 }, g, "says no: " + r[2]);
+        if (i < rows.length - 1) el("path", { "class": "ln", d: "M260 " + (y + 78) + "V" + (y + 98), "marker-end": "url(#ah)" }, g);
+      });
+    }
+
+    function render() {
+      if (current === 6) return;
+      var o = simulate({ spike: S.spike, timeouts: S.timeouts, cap: S.cap ? S.capN : null, rate: S.rate ? 80 : null, polite: S.polite, retry: S.retry });
+      drawCharts(o);
+      $("t-lim").textContent = S.cap ? "limit " + S.capN + " waiting" : "no limit";
+      $("t-want2").textContent = "spike: " + S.spike + "/s";
+      document.querySelectorAll("[data-out]").forEach(function (e) {
+        var k = e.getAttribute("data-out");
+        e.textContent = k === "spike" ? S[k] + "/s" : String(S[k]);
+      });
+    }
+    function syncControls() {
+      document.querySelectorAll("[data-k]").forEach(function (inp) {
+        var k = inp.getAttribute("data-k");
+        if (inp.type === "checkbox") inp.checked = !!S[k]; else inp.value = S[k];
+      });
+      document.querySelectorAll('input[name="retry"]').forEach(function (r) { r.checked = r.value === S.retry; });
+    }
+    var groups = document.querySelectorAll("#ml g[data-s]");
+    function show(n) {
+      var changed = Number(n) !== current;
+      current = Number(n);
+      if (changed && PRESET[current]) { for (var k in PRESET[current]) S[k] = PRESET[current][k]; syncControls(); }
+      groups.forEach(function (g) {
+        g.classList.toggle("show", g.getAttribute("data-s").split(" ").indexOf(String(n)) > -1);
+      });
+      $("prog").textContent = "screen " + n + " of 6";
+      render();
+    }
+
+    document.querySelectorAll("[data-k]").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        var k = inp.getAttribute("data-k"), v = inp.type === "checkbox" ? inp.checked : Number(inp.value);
+        S[k] = v;
+        document.querySelectorAll('[data-k="' + k + '"]').forEach(function (o) {
+          if (o.type === "checkbox") o.checked = v; else o.value = v;
+        });
+        render();
+      });
+    });
+    document.querySelectorAll('input[name="retry"]').forEach(function (r) {
+      r.addEventListener("change", function () { S.retry = r.value; render(); });
+    });
+
+    drawLayers();
+    for (var k0 in PRESET[1]) S[k0] = PRESET[1][k0];
+    syncControls();
+    show(1);
+    if (!("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) show(e.target.getAttribute("data-n")); });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    document.querySelectorAll(".screen[data-n]").forEach(function (s) { io.observe(s); });
+  })();
+</script>

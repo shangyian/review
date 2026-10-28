@@ -328,7 +328,7 @@
         <div class="blk"><h3>What a request touches</h3>
           <p>A short path: app to queue (a network hop and a durable write, a few milliseconds), then the reply. The slow work runs off the request path.</p></div>
         <div class="blk"><h3>The price</h3>
-          <p>"Accepted" and "done" disagree for a while. A job can run twice after a failure, so the work has to be safe to repeat. You also need job status, retries, and a plan for jobs that keep failing.</p></div>
+          <p>"Accepted" and "done" disagree for a while. A job can run twice after a failure, so the work has to be safe to repeat. You also need job status, retries, and a plan for jobs that keep failing. <a href="backpressure.html">What happens when jobs arrive faster than they finish &rarr;</a></p></div>
         <p class="pc"><b>Normally:</b> latency over consistency. The reply is instant, but the result is not ready yet. <b>During a partition:</b> the queue can keep accepting work (available) while processing falls behind.</p>
       </section>
       <section class="screen" data-n="6">
