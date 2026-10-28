@@ -300,7 +300,7 @@
             <li><b>Read:</b> app to a replica, one hop plus RAM or SSD.</li>
             <li><b>Write:</b> app to the primary, one hop plus an SSD write to its log, then copied to the replicas.</li>
           </ul>
-          <p><b>Price:</b> with asynchronous copying, replicas lag. A user can save something and then read the old version, and after a failover the newest writes can be lost. With synchronous copying every write waits for a replica to confirm, which is slower.</p>
+          <p><b>Price:</b> with asynchronous copying, replicas lag. A user can save something and then read the old version, and after a failover the newest writes can be lost. With synchronous copying every write waits for a replica to confirm, which is slower. <a href="replication.html">What goes wrong with copies, and the fixes &rarr;</a></p>
           <p class="pc"><b>Normally:</b> asynchronous replication is latency over consistency, and synchronous is the reverse. <b>During a partition:</b> promote a replica (available, but writes may be lost or forked) or stop accepting writes (consistent).</p></div>
         <div class="blk"><h3>Which to choose</h3>
           <ul>

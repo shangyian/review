@@ -1,0 +1,641 @@
+<title>Replication and Consistency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* One small model, evaluated step by step; a sticky panel changes with the screen and the controls. */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --track: #E6EAF0; --rule: #CBD3DD;
+    --cpu: #8DB8E8; --ram: #6A9FDB; --ssd: #4A85CB; --hop: #2F6BB5; --ocean: #123A78; --hl: #D9480F;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+      --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+    --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
+  a { color: inherit; }
+
+  .layout { display: grid; grid-template-columns: 520px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .layout aside { position: sticky; top: 16px; }
+  .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .layout figcaption { font-size: 0.75rem; color: var(--muted); }
+  .layout svg { width: 100%; max-height: calc(100vh - 60px); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout aside { position: static; max-width: 560px; }
+    .layout svg { max-height: none; }
+  }
+
+  .ml .t { fill: var(--fg); font: 11px var(--mono); }
+  .ml .tb { fill: var(--fg); font: 600 11px var(--mono); }
+  .ml .m { fill: var(--muted); font: 10px var(--mono); }
+  .ml .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  .ml .thin { stroke: var(--rule); stroke-width: 1; fill: none; }
+  .ml .dash { stroke-dasharray: 5 4; }
+  .ml rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
+  .ml .pos { fill: var(--ocean); stroke: var(--ocean); stroke-width: 1.5; }
+  .ml .neg { fill: var(--bg); stroke: var(--ssd); stroke-width: 1.5; }
+  .ml .err { fill: none; stroke: var(--fg); stroke-width: 1.25; stroke-dasharray: 2 2; }
+  .ml .testring { fill: none; stroke: var(--hop); stroke-width: 2; }
+  .ml .shade { fill: var(--track); }
+  .ml .bar { fill: var(--ram); }
+  .ml .bar.sel { fill: var(--ocean); }
+  .ml .barbg { fill: var(--track); }
+  .ml .handle { fill: var(--fg); }
+  .ml .cell { fill: var(--track); stroke: var(--rule); }
+  .ml .cell.good { fill: var(--cpu); }
+  .ml g[data-s] { display: none; }
+  .ml g[data-s].show { display: inline; }
+  .ml #strip-hit { cursor: ew-resize; fill: transparent; }
+
+  .stack { display: flex; flex-direction: column; min-width: 0; }
+  .screen { display: flex; flex-direction: column; gap: 12px; padding-block: 28px; border-top: 1px solid var(--rule); min-height: 70vh; }
+  .screen:first-child { border-top: 0; padding-top: 0; }
+  .screen h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .screen h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .blk h3 { margin: 0 0 2px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .blk p { margin: 0 0 6px; max-width: 66ch; }
+  .blk ul { margin: 0 0 6px; padding-left: 1.1em; max-width: 66ch; display: flex; flex-direction: column; gap: 4px; }
+  .blk code { font-family: var(--mono); font-size: 0.875em; }
+  .hero { display: flex; flex-direction: column; gap: 12px; }
+  .hero h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .hero h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .hero svg { width: 100%; height: auto; max-width: 1168px; }
+  .ml a text { fill: var(--hop); text-decoration: underline; cursor: pointer; }
+  .ml .soon { fill: var(--muted); font: italic 12px var(--mono); }
+  .hero svg :is(rect, path, text) { transition: stroke 0.2s, fill 0.2s; }
+  .hero svg.looping rect.ent[data-loop] { stroke: var(--hl); }
+  .hero svg.looping path[data-loop] { stroke: var(--hl); stroke-width: 2.5; marker-end: url(#hah-hl); }
+  .hero svg.looping text[data-loop] { fill: var(--hl); }
+  .hero svg.looping path[data-loop]:not([marker-end]) { marker-end: none; }
+  .hover-note text { text-decoration: underline dotted; cursor: help; }
+  .hover-note:focus { outline: none; }
+  .ml .hb { fill: var(--fg); font: 600 13px var(--mono); }
+  .ml .ht { fill: var(--fg); font: 12px var(--mono); }
+  .ml .hm { fill: var(--muted); font: 12px var(--mono); }
+  .ml rect.bar6 { fill: var(--c); }
+  .ml .big { fill: var(--fg); font: 600 26px var(--mono); }
+  .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 12px; background: var(--track); border-radius: 4px; max-width: 66ch; font-size: 0.9375rem; }
+  .ctl label { display: flex; align-items: center; gap: 8px; }
+  .ctl input[type="range"] { width: 180px; accent-color: var(--hop); }
+  .ctl output { font-family: var(--mono); font-size: 0.875rem; min-width: 3.5em; }
+  .ctl button { font: inherit; padding: 2px 10px; border: 1px solid var(--muted); background: var(--bg); color: var(--fg); border-radius: 4px; cursor: pointer; }
+  .tag { margin: -6px 0 0; font: 12px var(--mono); color: var(--muted); max-width: 66ch; }
+  .note { color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
+</style>
+
+<main class="wrap">
+  <header>
+    <a class="back" href="scaling-the-backend.html">&larr; Scaling the Backend</a>
+    <h1>Replication and Consistency</h1>
+    <p class="lede">When data has more than one copy, every read and every failure forces a choice about what a reader may see. This page goes through the failures in the order they tend to bite. Three of the screens are live labs.</p>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <figure>
+        <svg class="ml" id="ml" viewBox="0 0 520 620" role="img" aria-labelledby="ml-title">
+          <title id="ml-title">Seven views of replicated data: a leader with two replicas, how stale reads depend on replication lag, how many writes a failover loses, a network partition that splits the nodes into two groups, how read and write quorums decide whether a read sees the latest value, two regions writing at once, and a ladder of consistency guarantees.</title>
+          <defs>
+            <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
+            </marker>
+          </defs>
+          <text class="m" id="prog" x="10" y="14">screen 1 of 7</text>
+          <g data-s="1" id="s1"></g>
+          <g data-s="2" id="s2"></g>
+          <g data-s="3" id="s3"></g>
+          <g data-s="4" id="s4"></g>
+          <g data-s="5" id="s5"></g>
+          <g data-s="6" id="s6"></g>
+          <g data-s="7" id="s7"></g>
+        </svg>
+        <figcaption>Simulated, run in your browser.</figcaption>
+      </figure>
+    </aside>
+
+    <div class="stack">
+
+      <section class="screen" data-n="1" id="sec-1">
+        <h2><span class="rank">1</span>Why keep copies</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>One copy of the data is one machine to lose, one machine to read from, and one place that may be far from some users.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Keep copies. The common setup, used through the rest of this page, has one <b>leader</b> that takes every write and ships a log of changes to <b>replicas</b>. Replicas can survive a failure, answer reads, and sit near users. PostgreSQL's streaming replication, for example, is asynchronous by default, with a delay that is typically under one second if the standby can keep up. <a class="src" href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener">source</a></p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>A copy is only as current as the log it has received. For a moment after a write, the leader and the replicas disagree. Every failure on the next screens comes from that gap, and the choices to close it cost latency, availability, or both.</p></div>
+      </section>
+
+      <section class="screen" data-n="2" id="sec-2">
+        <h2><span class="rank">2</span>A replica shows old data</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>A user saves a change, reloads, and sees the old version, because the read went to a replica that has not received the write yet. Or they see new data, reload, and see older data, because the second read hit a replica that is further behind.</p></div>
+        <div class="ctl" role="radiogroup" aria-label="How reads are routed">
+          <label><input type="radio" name="policy" data-r="policy" value="any" checked> read any replica</label>
+          <label><input type="radio" name="policy" data-r="policy" value="leader" data-keep> read the leader for a while after a write</label>
+          <label><input type="radio" name="policy" data-r="policy" value="wait"> wait for the replica to catch up</label>
+        </div>
+        <div class="ctl">
+          <label>average lag <input type="range" min="50" max="2000" step="50" value="400" data-k="lag"><output data-out="lag">400 ms</output></label>
+          <label>leader window <input type="range" min="0" max="5" step="0.5" value="1" data-k="win"><output data-out="win">1 s</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>In the lab, each replica trails the leader by between half and one and a half times the average lag. The chart shows how likely a read is to be stale at each moment after the write. With any replica, nearly every read in the first moments is stale. The lag in real systems varies with load. The PostgreSQL docs describe the usual delay as under a second and note it can grow if the standby cannot keep up. <a class="src" href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener">source</a></p></div>
+        <div class="blk"><h3>The fix</h3>
+          <ul>
+            <li><b>Read recent writes from the leader.</b> For a short window after a user writes, send that user's reads to the leader. It costs leader load, and you must choose the window.</li>
+            <li><b>Keep each user on one replica.</b> The same replica can still be behind, but it can't go backward, so the user never sees time run in reverse.</li>
+            <li><b>Wait until the replica has caught up.</b> The read, or the write, waits for the replica to apply the change. PostgreSQL's <code>remote_apply</code> setting makes a commit wait until the standby has replayed it, which the docs say allows load balancing with causal consistency. <a class="src" href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener">source</a></li>
+          </ul>
+          <p>Some stores let you choose per read. DynamoDB reads are eventually consistent by default, and a <code>ConsistentRead</code> option returns the latest data, at twice the cost. Strong reads are not available on global secondary indexes or streams. <a class="src" href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html" target="_blank" rel="noopener">source</a></p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Fresh reads cost leader load or waiting time. <b>Else, latency against consistency</b> (PACELC).</p></div>
+      </section>
+
+      <section class="screen" data-n="3" id="sec-3">
+        <h2><span class="rank">3</span>A failover loses writes</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>The leader crashes. A replica takes over, but the replica only has the writes that had already arrived. Everything the old leader had acknowledged to clients and not yet shipped is gone. PostgreSQL's docs say so directly: with asynchronous shipping there is a window for data loss, and the amount lost is proportional to the replication delay at the time of failover. <a class="src" href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener">source</a></p></div>
+        <div class="ctl" role="radiogroup" aria-label="Replication mode">
+          <label><input type="radio" name="mode3" data-r="mode3" value="async" checked> asynchronous</label>
+          <label><input type="radio" name="mode3" data-r="mode3" value="sync"> synchronous (wait for one replica)</label>
+          <label><input type="checkbox" data-k="down3"> that replica is down</label>
+        </div>
+        <div class="ctl">
+          <label>writes per second <input type="range" min="10" max="200" step="10" value="50" data-k="rate"><output data-out="rate">50/s</output></label>
+          <label>lag <input type="range" min="10" max="2000" step="10" value="500" data-k="lag3"><output data-out="lag3">500 ms</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>Each tick is a write that was acknowledged to a client. Blue ticks reached the replica before the crash and orange ones did not. The number lost is the write rate times the lag. Doubling either one doubles the loss. An old leader that comes back may also hold writes the new leader never saw, so the two histories have to be reconciled or one thrown away.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <p>Make the leader wait. In synchronous replication, each commit waits until it is confirmed on disk on both the primary and the standby, and data is lost only if both crash at once. <a class="src" href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener">source</a> Tick "that replica is down" with synchronous replication.</p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Every write now waits at least a round trip to the replica. And if the synchronous standby fails, the docs say commits may never complete. The mitigation is to list several candidate standbys, so another can take over, or to reduce the number required. <a class="src" href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener">source</a> <b>Else, latency against consistency, and in a failure, availability against consistency.</b></p></div>
+      </section>
+
+      <section class="screen" data-n="4" id="sec-4">
+        <h2><span class="rank">4</span>Split brain</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>A network partition cuts the cluster in two. The old leader is on one side and cannot reach the others. The other side decides the leader is gone and elects a new one. Now two nodes both believe they lead, and both accept writes.</p></div>
+        <div class="ctl" role="radiogroup" aria-label="Leader rule">
+          <label><input type="radio" name="mode4" data-r="mode4" value="plain" checked> a leader needs no majority</label>
+          <label><input type="radio" name="mode4" data-r="mode4" value="majority"> a leader needs a majority</label>
+          <label>step <input type="range" min="0" max="4" step="1" value="0" data-k="step"><output data-out="step">0</output></label>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Step through five nodes: a healthy cluster, then a partition, then an election on the larger side, then a write on each side, and finally the partition heals. Switch the rule to see what a majority requirement changes.</p></div>
+        <div class="blk"><h3>The fix</h3>
+          <ul>
+            <li><b>Require a majority.</b> In Raft, a log entry is committed once the leader has replicated it on a majority of the servers, and a new leader needs votes from a majority. A leader cut off from the majority cannot commit anything, and a server that sees a higher term reverts to follower. <a class="src" href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">source</a></li>
+            <li><b>Fence the old leader.</b> A paused or cut-off node may not know it lost its lease. Give each new leader a larger number, make the storage layer remember the highest number it has seen, and refuse writes with a smaller one. Kleppmann notes a pause can hit at any point, even right after a check, so checking the lease before writing is not enough. <a class="src" href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html" target="_blank" rel="noopener">source</a></li>
+          </ul></div>
+        <div class="blk"><h3>The price</h3>
+          <p>The smaller side stops accepting writes, and with fewer than a majority of nodes up, nobody does. <b>During a partition, consistency over availability</b> (PACELC).</p></div>
+      </section>
+
+      <section class="screen" data-n="5" id="sec-5">
+        <h2><span class="rank">5</span>Quorums</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>Some stores have no single leader. A write goes to every copy and the store returns once enough of them confirm, and a read asks several copies. How many is enough is a dial, and it trades freshness against latency and availability.</p></div>
+        <div class="ctl">
+          <label>write waits for W <input type="range" min="1" max="3" step="1" value="2" data-k="W"><output data-out="W">2</output></label>
+          <label>read asks R <input type="range" min="1" max="3" step="1" value="2" data-k="R"><output data-out="R">2</output></label>
+        </div>
+        <div class="ctl">
+          <span>copies that are down:</span>
+          <label><input type="checkbox" data-k="d0"> fast</label>
+          <label><input type="checkbox" data-k="d1"> medium</label>
+          <label><input type="checkbox" data-k="d2"> slow</label>
+          <button type="button" id="resample">try another read</button>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>With N copies, a write waits for W confirmations and a read asks R copies. If R + W is greater than N, the copies a read asks must include at least one that has the write. The Cassandra docs state it as W + R &gt; RF, and give <code>QUORUM</code> as a majority of the replicas. <a class="src" href="https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html" target="_blank" rel="noopener">source</a> In the lab the three copies answer in 3, 5 and 40 ms. Waiting for the slow one costs far more than waiting for the fast one.</p>
+          <p>Dynamo reports a common configuration of N=3, R=2, W=2, and notes that raising W shrinks the window where a write is not yet durable, but may reject more requests because more hosts must be alive. <a class="src" href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" target="_blank" rel="noopener">source</a></p></div>
+        <div class="blk"><h3>The price</h3>
+          <p>A bigger W or R is fresher and slower, and fails when too many copies are down. A smaller one is fast and available, and can return stale data. Dynamo relaxes this further with a sloppy quorum and hinted handoff, so a write can land on other nodes while a copy is down. That keeps writes available at the cost of weaker freshness. <a class="src" href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" target="_blank" rel="noopener">source</a> <b>Else, latency against consistency. During a failure, availability against consistency.</b></p></div>
+      </section>
+
+      <section class="screen" data-n="6" id="sec-6">
+        <h2><span class="rank">6</span>Writes in two places at once</h2>
+        <div class="blk"><h3>The problem</h3>
+          <p>Two regions each accept writes to the same item, say a shopping cart. The writes cross in flight, and each region must decide what the cart now contains.</p></div>
+        <div class="ctl" role="radiogroup" aria-label="How conflicts are resolved">
+          <label><input type="radio" name="res" data-r="res" value="lww" checked> last writer wins</label>
+          <label><input type="radio" name="res" data-r="res" value="merge"> merge both</label>
+          <label><input type="radio" name="res" data-r="res" value="home"> one home region</label>
+          <label>region B's clock is behind by <input type="range" min="0" max="500" step="10" value="100" data-k="skew"><output data-out="skew">100 ms</output></label>
+        </div>
+        <div class="blk"><h3>What it tells you</h3>
+          <p>Region A adds a book. 200 ms later, region B adds a pen. With last writer wins, the newer timestamp survives and the other write disappears. But timestamps come from clocks. If region B's clock runs more than 200 ms behind, the pen is stamped as older and the later write is the one discarded. Cassandra resolves conflicts this way, by timestamp, and its docs recommend running a process such as NTP to keep clocks close. <a class="src" href="https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html" target="_blank" rel="noopener">source</a></p></div>
+        <div class="blk"><h3>The fix</h3>
+          <ul>
+            <li><b>Merge.</b> Keep both changes. Dynamo's own example is the shopping cart, where an add-to-cart operation should never be lost, so conflicting versions are merged and the cart keeps both items. It uses vector clocks to tell which versions truly conflict. <a class="src" href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" target="_blank" rel="noopener">source</a></li>
+            <li><b>One home region per item.</b> Send every write for a cart to one region, which puts them in a single order. Other regions forward their writes there.</li>
+          </ul></div>
+        <div class="blk"><h3>The price</h3>
+          <p>Merging needs logic that fits the data: a union works for a cart and not for a bank balance. A home region makes distant writes pay a cross-region trip, and the item is unavailable for writes if its home region is unreachable.</p></div>
+      </section>
+
+      <section class="screen" data-n="7" id="sec-7">
+        <h2><span class="rank">7</span>The ladder, and choosing per operation</h2>
+        <div class="blk"><h3>What you see</h3>
+          <p>Consistency is a ladder of guarantees, not one setting. Jepsen's map of consistency models orders them by implication: strict serializable implies linearizable, which implies sequential, then causal, then the per-session guarantees such as read your writes and monotonic reads. It also notes that weaker models can be totally available, that read your writes and stronger can be at most sticky available, and that sequential and stronger cannot be totally available. <a class="src" href="https://jepsen.io/consistency/models" target="_blank" rel="noopener">source</a> The plain definitions in the figure are mine.</p></div>
+        <div class="blk"><h3>Choose per operation, not per system</h3>
+          <ul>
+            <li><b>Moving money, picking the one scheduler:</b> the top of the ladder. Pay the latency and accept that the minority side stops.</li>
+            <li><b>Showing a user their own edit:</b> read your writes is enough. Read from the leader or a caught-up replica.</li>
+            <li><b>A feed, a counter, a recommendation:</b> eventual is usually fine, and it is the fastest and the most available.</li>
+          </ul>
+          <p>The PACELC summary of the screens above: <b>during a partition</b> a store favors availability or consistency (screens 4 and 5). <b>Otherwise</b> it favors latency or consistency (screens 2, 3 and 5). The right setting differs by operation, so a good design lets you choose per read or per write, as DynamoDB's <code>ConsistentRead</code> flag and Cassandra's consistency levels do.</p></div>
+        <p class="note">The simulations use round numbers I picked: replication lags, a 5 ms round trip, and replica response times of 3, 5 and 40 ms. The plain-language definitions on screen 7 and the idea that a returning old leader may hold unreplicated writes are general knowledge, not quoted from the sources.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ol>
+      <li>PostgreSQL documentation, <a href="https://www.postgresql.org/docs/current/warm-standby.html" target="_blank" rel="noopener">High Availability, Load Balancing, and Replication</a> (asynchronous and synchronous replication, data loss on failover, <code>remote_apply</code>).</li>
+      <li>Amazon DynamoDB Developer Guide, <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html" target="_blank" rel="noopener">Read consistency</a>.</li>
+      <li>Apache Cassandra documentation, <a href="https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html" target="_blank" rel="noopener">Dynamo-style architecture</a> (tunable consistency levels, last-write-wins).</li>
+      <li>DeCandia et al., <a href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" target="_blank" rel="noopener">Dynamo: Amazon's Highly Available Key-value Store</a>, SOSP 2007 (N, R, W, sloppy quorum, vector clocks, the shopping cart).</li>
+      <li>Ongaro and Ousterhout, <a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">In Search of an Understandable Consensus Algorithm</a> (Raft: majority commit, terms, elections).</li>
+      <li>Martin Kleppmann, <a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html" target="_blank" rel="noopener">How to do distributed locking</a> (fencing tokens).</li>
+      <li>Jepsen, <a href="https://jepsen.io/consistency/models" target="_blank" rel="noopener">Consistency models</a> (the implication map and availability).</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var NS = "http://www.w3.org/2000/svg";
+    function $(id) { return document.getElementById(id); }
+    function el(tag, attrs, parent, text) {
+      var e = document.createElementNS(NS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (text !== undefined) e.textContent = text;
+      parent.appendChild(e);
+      return e;
+    }
+    function clear(g) { while (g.firstChild) g.removeChild(g.firstChild); }
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function box(g, x, y, w, h, c, title, lines, cls) {
+      el("rect", { "class": "ent" + (cls ? " " + cls : ""), x: x, y: y, width: w, height: h, rx: 4, style: "--c: var(--" + c + ")" }, g);
+      el("text", { "class": "tb", x: x + 10, y: y + 18 }, g, title);
+      (lines || []).forEach(function (l, i) { el("text", { "class": "m", x: x + 10, y: y + 34 + 14 * i }, g, l); });
+    }
+    function arrow(g, d, dashed) { el("path", { "class": "ln" + (dashed ? " dash" : ""), d: d, "marker-end": "url(#ah)" }, g); }
+    function wrapText(t, n) {
+      var out = [], cur = "";
+      t.split(" ").forEach(function (w) {
+        if ((cur + " " + w).trim().length > n) { out.push(cur); cur = w; } else { cur = (cur + " " + w).trim(); }
+      });
+      if (cur) out.push(cur);
+      return out;
+    }
+    function label(g, x, y, t, anchor) { el("text", { "class": "m", x: x, y: y, "text-anchor": anchor || "start" }, g, t); }
+
+    var S = { policy: "any", lag: 400, win: 1, mode3: "async", down3: false, rate: 50, lag3: 500,
+              mode4: "plain", step: 0, W: 2, R: 2, d0: false, d1: false, d2: false, res: "lww", skew: 100, sample: 0 };
+    var current = 1;
+
+    // screen 1: a leader and two replicas
+    function drawS1() {
+      var g = $("s1");
+      clear(g);
+      label(g, 20, 34, "One leader takes writes and ships its log to replicas");
+      box(g, 20, 60, 90, 50, "cpu", "client", ["reads, writes"]);
+      box(g, 190, 60, 120, 50, "hop", "leader", ["takes every write"]);
+      box(g, 380, 30, 120, 50, "ssd", "replica 1", ["a copy"]);
+      box(g, 380, 100, 120, 50, "ssd", "replica 2", ["a copy"]);
+      arrow(g, "M110 85H188");
+      label(g, 126, 80, "write");
+      arrow(g, "M310 75H340V55H378");
+      arrow(g, "M310 95H340V125H378");
+      label(g, 316, 160, "log shipped, usually async");
+      arrow(g, "M65 110V190H440V152", true);
+      label(g, 80, 184, "reads can go to any copy");
+      box(g, 20, 236, 150, 70, "cpu", "survive a failure", ["a copy can take over"]);
+      box(g, 185, 236, 150, 70, "ram", "spread reads", ["replicas answer reads"]);
+      box(g, 350, 236, 150, 70, "ssd", "closer to users", ["copies in other regions"]);
+      label(g, 20, 346, "The price: copies can disagree");
+      label(g, 20, 364, "A write of x = 2 reaches the leader first:");
+      box(g, 20, 380, 140, 56, "hop", "leader", ["x = 2"]);
+      box(g, 190, 380, 140, 56, "ssd", "replica 1", ["x = 1 (log in flight)"]);
+      box(g, 360, 380, 140, 56, "ssd", "replica 2", ["x = 1 (log in flight)"]);
+      arrow(g, "M160 408H188", true);
+      arrow(g, "M160 418H340V440", true);
+      label(g, 20, 470, "A read now returns 2 or 1, depending on which copy it hits.");
+    }
+
+    // screen 2: stale reads against lag
+    function pStale(d) {
+      var L = S.lag / 1000;
+      var base = clamp((1.5 * L - d) / L, 0, 1);
+      if (S.policy === "wait") return 0;
+      if (S.policy === "leader" && d < S.win) return 0;
+      return base;
+    }
+    function pAny(d) { var L = S.lag / 1000; return clamp((1.5 * L - d) / L, 0, 1); }
+    function drawS2() {
+      var g = $("s2");
+      clear(g);
+      label(g, 40, 34, "chance a read is stale, by time since the write");
+      el("rect", { x: 40, y: 46, width: 460, height: 200, "class": "thin" }, g);
+      [0, 1, 2, 3].forEach(function (t) {
+        var x = 40 + t / 3 * 460;
+        label(g, x, 262, t + " s", t === 3 ? "end" : (t === 0 ? "start" : "middle"));
+        el("path", { "class": "thin", d: "M" + x + " 246V240" }, g);
+      });
+      label(g, 36, 56, "100%", "end"); label(g, 36, 148, "50%", "end"); label(g, 36, 246, "0", "end");
+      function curve(fn, style) {
+        var d = "";
+        for (var i = 0; i <= 120; i++) {
+          var t = i / 120 * 3;
+          d += (i ? "L" : "M") + (40 + t / 3 * 460).toFixed(1) + " " + (246 - fn(t) * 200).toFixed(1);
+        }
+        el("path", { "class": "ln", d: d, style: style }, g);
+      }
+      curve(pAny, "stroke: var(--hl); stroke-width: " + (S.policy === "any" ? 3 : 1.5) + "; opacity: " + (S.policy === "any" ? 1 : 0.5));
+      curve(function (t) { return t < S.win ? 0 : pAny(t); }, "stroke: var(--ssd); stroke-width: " + (S.policy === "leader" ? 3 : 1.5) + "; opacity: " + (S.policy === "leader" ? 1 : 0.5));
+      el("path", { "class": "ln dash", d: "M40 245H500", style: "stroke: var(--ocean); stroke-width: " + (S.policy === "wait" ? 3 : 1.5) }, g);
+      label(g, 44, 286, "replicas trail the leader by 0.5 to 1.5 times the average lag");
+      var rows = [
+        ["any", "read any replica", pAny(0.5), "none, stale at first"],
+        ["leader", "leader for " + S.win + " s after a write", (0.5 < S.win ? 0 : pAny(0.5)), "leader takes more reads"],
+        ["wait", "wait for catch-up", 0, "waits up to " + Math.round(1.5 * S.lag) + " ms"]
+      ];
+      label(g, 40, 330, "policy"); label(g, 250, 330, "stale at 0.5 s"); label(g, 340, 330, "cost");
+      rows.forEach(function (r, i) {
+        var y = 354 + i * 52, sel = r[0] === S.policy;
+        el("rect", { "class": "ent", x: 36, y: y - 16, width: 464, height: 44, rx: 3, style: "--c: var(--" + (sel ? "hl" : "rule") + "); stroke-width: " + (sel ? 2 : 1) }, g);
+        el("text", { "class": sel ? "tb" : "t", x: 44, y: y + 4 }, g, r[1]);
+        el("text", { "class": sel ? "tb" : "t", x: 250, y: y + 4 }, g, Math.round(r[2] * 100) + "%");
+        el("text", { "class": "m", x: 340, y: y + 4 }, g, r[3]);
+      });
+      label(g, 40, 530, "Replicas can lag by different amounts, so two reads in a row");
+      label(g, 40, 546, "may go backward in time. Pinning a user to one replica stops that.");
+    }
+
+    // screen 3: writes lost on failover
+    function drawS3() {
+      var g = $("s3"), rate = S.rate, n = Math.min(Math.round(rate * 3), 150), lagS = S.lag3 / 1000;
+      clear(g);
+      label(g, 40, 34, "every acknowledged write in the last 3 seconds before the leader crashes");
+      el("path", { "class": "ln", d: "M40 120H500" }, g);
+      label(g, 40, 140, "3 s before");
+      label(g, 500, 140, "crash", "end");
+      var downAt = 1.5, acked = 0, lost = 0, waiting = 0;
+      for (var i = 0; i < n; i++) {
+        var t = i / (n - 1) * 3, x = 40 + t / 3 * 460, color, st;
+        var toCrash = 3 - t;
+        if (S.mode3 === "sync" && S.down3 && toCrash < downAt) { color = "var(--muted)"; st = 0.35; waiting++; }
+        else if (S.mode3 === "async" && toCrash < lagS) { color = "var(--hl)"; lost++; acked++; }
+        else { color = "var(--ssd)"; acked++; }
+        el("path", { "class": "ln", d: "M" + x.toFixed(1) + " 90V120", style: "stroke: " + color + "; stroke-width: " + (n > 100 ? 1 : 2) + (st ? "; opacity: " + st : "") }, g);
+      }
+      var lostN = S.mode3 === "async" ? Math.round(rate * Math.min(lagS, 3)) : 0;
+      if (S.mode3 === "async") {
+        var lx = 500 - Math.min(lagS, 3) / 3 * 460;
+        el("path", { "class": "ln dash", d: "M" + lx + " 70V130" }, g);
+        label(g, lx - 4, 66, "not yet shipped", "end");
+      }
+      if (S.mode3 === "sync" && S.down3) {
+        var dx = 500 - downAt / 3 * 460;
+        el("path", { "class": "ln dash", d: "M" + dx + " 70V130" }, g);
+        label(g, dx - 4, 66, "replica goes down", "end");
+      }
+      var total = Math.round(rate * 3);
+      var stat = [];
+      if (S.mode3 === "async") {
+        stat = [["acknowledged to clients", String(total)], ["lost on failover", lostN + " (rate x lag)"], ["write latency", "unchanged"]];
+      } else if (S.down3) {
+        stat = [["acknowledged to clients", String(Math.round(rate * (3 - downAt)))], ["never acknowledged", Math.round(rate * downAt) + " (commits wait)"], ["lost on failover", "0 of those acknowledged"]];
+      } else {
+        stat = [["acknowledged to clients", String(total)], ["lost on failover", "0"], ["write latency", "+ one round trip to the replica"]];
+      }
+      stat.forEach(function (r, i) {
+        el("text", { "class": "m", x: 40, y: 200 + i * 28 }, g, r[0]);
+        el("text", { "class": "tb", x: 250, y: 200 + i * 28 }, g, r[1]);
+      });
+      var msg = S.mode3 === "async" ? "The new leader never saw the orange writes, but clients were told they succeeded."
+        : (S.down3 ? "Writes stall while the synchronous replica is down: unavailable, but nothing acknowledged is lost."
+        : "Each commit waits for the replica, so a crash loses nothing that was acknowledged.");
+      wrapText(msg, 70).forEach(function (ln, i) { label(g, 40, 310 + i * 16, ln); });
+      label(g, 40, 372, "If the old leader comes back, it may hold writes the new leader never");
+      label(g, 40, 388, "saw. Those two histories must be reconciled, or one thrown away.");
+    }
+
+    // screen 4: split brain, stepped
+    function drawS4() {
+      var g = $("s4"), step = S.step, maj = S.mode4 === "majority";
+      clear(g);
+      var N = { A: [90, 150], B: [90, 290], C: [350, 120], D: [440, 215], E: [350, 310] };
+      var left = ["A", "B"], right = ["C", "D", "E"];
+      label(g, 20, 34, ["healthy cluster: A leads (term 1)", "partition: the two groups cannot talk",
+        "the larger side times out and elects C (term 2)", "a write arrives on each side", "the partition heals"][step]);
+      var names = Object.keys(N);
+      names.forEach(function (a, i) {
+        names.slice(i + 1).forEach(function (b) {
+          var cross = (left.indexOf(a) > -1) !== (left.indexOf(b) > -1);
+          if (cross && step >= 1 && step < 4) return;
+          el("path", { "class": "thin", d: "M" + N[a][0] + " " + N[a][1] + "L" + N[b][0] + " " + N[b][1] }, g);
+        });
+      });
+      if (step >= 1 && step < 4) {
+        el("path", { "class": "ln dash", d: "M215 70V335", style: "stroke: var(--hl); stroke-width: 2" }, g);
+        label(g, 222, 76, "partition");
+      }
+      names.forEach(function (k) {
+        var isLeaderA = k === "A" && (step < 3 || !maj || step === 3), isLeaderC = k === "C" && step >= 2;
+        var c = (k === "A" || k === "B") ? "hop" : "ssd";
+        el("circle", { cx: N[k][0], cy: N[k][1], r: 22, "class": "ent", style: "fill: var(--bg); stroke-width: " + (isLeaderA || isLeaderC ? 4 : 2) + "; stroke: var(--" + c + ")" }, g);
+        el("text", { "class": "tb", x: N[k][0], y: N[k][1] + 4, "text-anchor": "middle" }, g, k);
+      });
+      var roleA = step < 4 ? "leader, term 1" : (maj ? "follower, term 2" : "leader, term 1");
+      label(g, N.A[0], N.A[1] + 40, roleA, "middle");
+      if (step >= 2) label(g, N.C[0], N.C[1] - 30, "leader, term 2", "middle");
+      if (step === 3) {
+        if (maj) {
+          box(g, 20, 350, 220, 70, "hop", "A: write x = 1", ["reached 2 of 5 nodes,", "needs 3: not committed"]);
+          box(g, 280, 350, 220, 70, "ssd", "C: write x = 2", ["reached 3 of 5 nodes:", "committed"]);
+        } else {
+          box(g, 20, 350, 220, 70, "hop", "A: write x = 1", ["accepted by A and B"]);
+          box(g, 280, 350, 220, 70, "ssd", "C: write x = 2", ["accepted by C, D and E"]);
+        }
+      }
+      if (step === 4) {
+        if (maj) {
+          box(g, 20, 350, 480, 70, "ssd", "A sees term 2 and steps down", ["it copies C's log. x = 2 everywhere, and no acknowledged write was lost."]);
+        } else {
+          box(g, 20, 350, 480, 70, "ocean", "two histories for x", ["x = 1 and x = 2 were both acknowledged.", "One of them must now be thrown away."]);
+        }
+      }
+      label(g, 20, 470, maj ? "With a majority rule, the smaller side serves no writes while cut off."
+        : "Without it, both sides stay available, and the data diverges.");
+      label(g, 20, 490, "A leader with the larger term wins; the stale leader must be refused.");
+    }
+
+    // screen 5: quorum lab
+    var LAT = [3, 5, 40], NAMES = ["fast", "medium", "slow"];
+    function combos(arr, k) {
+      if (k === 0) return [[]];
+      if (arr.length < k) return [];
+      var out = [];
+      arr.forEach(function (x, i) { combos(arr.slice(i + 1), k - 1).forEach(function (c) { out.push([x].concat(c)); }); });
+      return out;
+    }
+    function quorumStats() {
+      var up = [0, 1, 2].filter(function (i) { return !S["d" + i]; });
+      var u = up.length, W = S.W, R = S.R;
+      var writeOk = u >= W, readOk = u >= R;
+      var wLat = writeOk ? up.map(function (i) { return LAT[i]; }).sort(function (a, b) { return a - b; })[W - 1] : null;
+      var holders = writeOk ? up.slice().sort(function (a, b) { return LAT[a] - LAT[b]; }).slice(0, W) : [];
+      var rc = readOk ? combos(up, R) : [];
+      var fresh = 0, rLat = 0;
+      rc.forEach(function (c) {
+        if (c.some(function (i) { return holders.indexOf(i) > -1; })) fresh++;
+        rLat += Math.max.apply(null, c.map(function (i) { return LAT[i]; }));
+      });
+      return { up: up, writeOk: writeOk, readOk: readOk, wLat: wLat, holders: holders, rc: rc,
+               pFresh: rc.length ? fresh / rc.length : 0, rLat: rc.length ? rLat / rc.length : null };
+    }
+    function drawS5() {
+      var g = $("s5"), q = quorumStats();
+      clear(g);
+      label(g, 20, 34, "3 copies. A write of v2 replaces v1. Then a read.");
+      [0, 1, 2].forEach(function (i) {
+        var x = 20 + i * 165, down = S["d" + i], has = q.holders.indexOf(i) > -1;
+        el("rect", { "class": "ent", x: x, y: 52, width: 150, height: 86, rx: 4, style: "--c: var(--" + (down ? "rule" : (has ? "ocean" : "ssd")) + "); stroke-width: " + (has ? 3 : 2) + (down ? "; stroke-dasharray: 5 4" : "") }, g);
+        el("text", { "class": "tb", x: x + 10, y: 72 }, g, NAMES[i] + " copy");
+        el("text", { "class": "m", x: x + 10, y: 88 }, g, LAT[i] + " ms to answer");
+        el("text", { "class": "tb", x: x + 10, y: 116 }, g, down ? "down" : (has ? "v2 (has the write)" : "v1 (not yet)"));
+      });
+      var pick = q.rc.length ? q.rc[S.sample % q.rc.length] : [];
+      pick.forEach(function (i) {
+        var x = 20 + i * 165;
+        el("path", { "class": "ln", d: "M" + (x + 75) + " 190V140", "marker-end": "url(#ah)", style: "stroke: var(--hl); stroke-width: 2" }, g);
+      });
+      label(g, 330, 170, pick.length ? "this read asked these" : "this read cannot get enough");
+      label(g, 330, 184, pick.length ? "copies (arrows):" : "copies");
+      var sample = pick.length ? (pick.some(function (i) { return q.holders.indexOf(i) > -1; }) ? "returned v2, the latest" : "returned v1, stale") : "";
+      if (sample) el("text", { "class": "tb", x: 330, y: 206, style: "fill: var(--" + (sample.indexOf("v2") > -1 ? "fg" : "hl") + ")" }, g, sample);
+      var rows = [
+        ["R + W = " + (S.R + S.W) + (S.R + S.W > 3 ? ", more than 3" : ", not more than 3"), S.R + S.W > 3 ? "reads overlap the write" : "a read can miss the write"],
+        ["write waits for " + S.W, q.writeOk ? "about " + q.wLat + " ms" : "fails: only " + q.up.length + " copies up"],
+        ["read asks " + S.R, q.readOk ? "about " + Math.round(q.rLat) + " ms on average" : "fails: only " + q.up.length + " copies up"],
+        ["chance a read returns v2", q.writeOk && q.readOk ? Math.round(q.pFresh * 100) + "%" : "no write or no read"]
+      ];
+      rows.forEach(function (r, i) {
+        el("text", { "class": "m", x: 20, y: 262 + i * 34 }, g, r[0]);
+        el("text", { "class": "tb", x: 250, y: 262 + i * 34 }, g, r[1]);
+      });
+      label(g, 20, 420, "The write lands on the fastest W copies that are up; the");
+      label(g, 20, 436, "others catch up later. A read asks R copies, chosen at random.");
+      label(g, 20, 470, "Try W = 1, R = 1: fast and often stale.");
+      label(g, 20, 486, "Try W = 3, R = 1: the slow copy sets the write time.");
+      label(g, 20, 502, "Take a copy down with W = 3: the write fails.");
+    }
+
+    // screen 6: two regions writing at once
+    function drawS6() {
+      var g = $("s6"), skew = S.skew;
+      clear(g);
+      label(g, 20, 34, "two writes to the same cart, 200 ms apart");
+      box(g, 20, 54, 220, 88, "hop", "region A", ["clock is right", "adds \"book\" at 0 ms", "stamped 0 ms"]);
+      box(g, 280, 54, 220, 88, "ssd", "region B", ["clock is " + skew + " ms behind", "adds \"pen\" at 200 ms", "stamped " + (200 - skew) + " ms"]);
+      arrow(g, "M130 142V200");
+      arrow(g, "M390 142V200");
+      var out, note;
+      if (S.res === "lww") {
+        var bWins = (200 - skew) > 0;
+        out = [bWins ? "pen" : "book"];
+        note = bWins ? "the larger stamp is B's, so A's book is dropped" : "B's stamp is older, so the later pen is dropped";
+      } else if (S.res === "merge") {
+        out = ["book", "pen"]; note = "both changes are kept (a union)";
+      } else {
+        out = ["book", "pen"]; note = "B forwards to A, which applies them in order; B pays a cross-region trip";
+      }
+      box(g, 20, 204, 480, 96, S.res === "lww" ? "ocean" : "ssd", "cart after the regions sync", ["items: " + out.join(", "), note]);
+      var lost = S.res === "lww";
+      label(g, 20, 336, lost ? "One customer's add-to-cart vanished, and which one depends on clocks." : "No add-to-cart was lost.");
+      label(g, 20, 366, "last writer wins: simple, but loses data and trusts clocks");
+      label(g, 20, 382, "merge: keeps everything, needs logic that fits the data");
+      label(g, 20, 398, "one home region: one order, but distant writes are slower");
+      label(g, 20, 414, "and the item is unwritable if its home region is cut off");
+    }
+
+    // screen 7: the ladder
+    function drawS7() {
+      var g = $("s7");
+      clear(g);
+      label(g, 20, 34, "strongest at the top");
+      var rungs = [
+        ["linearizable", "like one copy: a read sees every earlier write", "needs a leader or majority; minority side stops", "ocean", "DynamoDB strongly consistent read"],
+        ["causal", "if you saw A before writing B, everyone sees A first", "at most sticky available", "hop", "PostgreSQL remote_apply (per its docs)"],
+        ["read your writes", "you always see your own writes", "at most sticky available", "ssd", "read the leader after a write"],
+        ["monotonic reads", "your reads never go backward", "pin each user to one replica", "ram", "one replica per user"],
+        ["eventual", "if writes stop, copies converge; nothing now", "can stay available, and fastest", "cpu", "DynamoDB default read, async standby"]
+      ];
+      rungs.forEach(function (r, i) {
+        var y = 52 + i * 106;
+        el("rect", { "class": "ent", x: 20, y: y, width: 480, height: 94, rx: 4, style: "--c: var(--" + r[3] + ")" }, g);
+        el("text", { "class": "tb", x: 32, y: y + 22 }, g, r[0]);
+        el("text", { "class": "t", x: 32, y: y + 42 }, g, r[1]);
+        el("text", { "class": "m", x: 32, y: y + 62 }, g, "cost: " + r[2]);
+        el("text", { "class": "m", x: 32, y: y + 80 }, g, "e.g. " + r[4]);
+      });
+      label(g, 20, 596, "Jepsen's full map has more rungs, such as sequential and serializable.");
+    }
+
+    function render() {
+      ({ 1: drawS1, 2: drawS2, 3: drawS3, 4: drawS4, 5: drawS5, 6: drawS6, 7: drawS7 })[current]();
+      document.querySelectorAll("[data-out]").forEach(function (o) {
+        var k = o.getAttribute("data-out"), v = S[k];
+        o.textContent = k === "lag" || k === "lag3" || k === "skew" ? v + " ms" : k === "win" ? v + " s" : k === "rate" ? v + "/s" : String(v);
+      });
+    }
+    var groups = document.querySelectorAll("#ml g[data-s]");
+    function show(n) {
+      current = Number(n);
+      groups.forEach(function (g) { g.classList.toggle("show", g.getAttribute("data-s") === String(n)); });
+      $("prog").textContent = "screen " + n + " of 7";
+      render();
+    }
+    document.querySelectorAll("[data-k]").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        var k = inp.getAttribute("data-k"), v = inp.type === "checkbox" ? inp.checked : Number(inp.value);
+        S[k] = v;
+        document.querySelectorAll('[data-k="' + k + '"]').forEach(function (o) {
+          if (o.type === "checkbox") o.checked = v; else o.value = v;
+        });
+        render();
+      });
+    });
+    document.querySelectorAll("[data-r]").forEach(function (r) {
+      r.addEventListener("change", function () { S[r.getAttribute("data-r")] = r.value; render(); });
+    });
+    $("resample").addEventListener("click", function () { S.sample += 1; render(); });
+    show(1);
+    if (!("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) show(e.target.getAttribute("data-n")); });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    document.querySelectorAll(".screen[data-n]").forEach(function (s) { io.observe(s); });
+  })();
+</script>
