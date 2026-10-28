@@ -1,0 +1,346 @@
+<title>Back-of-the-Envelope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* A drill: random estimation problems, checked on a log scale, with worked steps. */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --track: #E6EAF0; --rule: #CBD3DD;
+    --cpu: #8DB8E8; --ram: #6A9FDB; --ssd: #4A85CB; --hop: #2F6BB5; --ocean: #123A78; --hl: #D9480F;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+      --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+    --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 22px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
+  a { color: inherit; }
+  code, .mono { font-family: var(--mono); font-size: 0.875em; }
+
+  .topics { display: flex; flex-wrap: wrap; gap: 8px; }
+  .topics label { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--rule); border-radius: 999px; font-size: 0.875rem; cursor: pointer; }
+  .topics input { accent-color: var(--hop); }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px 20px; font-family: var(--mono); font-size: 0.8125rem; color: var(--muted); }
+  .stats b { color: var(--fg); font-weight: 600; }
+
+  .card { border: 2px solid var(--hop); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .chip { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .q { font-size: 1.125rem; margin: 0; max-width: 60ch; }
+  .assume { margin: 0; color: var(--muted); font-size: 0.9375rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .row input[type="text"] { font: inherit; font-family: var(--mono); padding: 8px 10px; border: 1px solid var(--muted); border-radius: 4px; background: var(--bg); color: var(--fg); width: 11em; }
+  .unit { font-family: var(--mono); font-size: 0.875rem; color: var(--muted); }
+  button { font: inherit; padding: 7px 14px; border: 1px solid var(--muted); background: var(--bg); color: var(--fg); border-radius: 4px; cursor: pointer; }
+  button.primary { background: var(--hop); border-color: var(--hop); color: var(--bg); font-weight: 600; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
+  .hint { margin: 0; padding: 8px 12px; background: var(--track); border-radius: 4px; font-size: 0.9375rem; }
+  .result { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: var(--track); border-radius: 4px; }
+  .verdict { margin: 0; font-weight: 600; }
+  .result ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 3px; }
+  .remember { margin: 0; font-size: 0.9375rem; }
+  .from { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+  .err { margin: 0; color: var(--hl); font-size: 0.9375rem; }
+
+  details { border-top: 1px solid var(--rule); padding-top: 14px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .ref { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 24px; margin-top: 12px; }
+  .ref h3 { margin: 0 0 4px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .ref ul { margin: 0; padding-left: 1.1em; font-size: 0.9375rem; display: flex; flex-direction: column; gap: 3px; }
+  .note { color: var(--muted); font-size: 0.875rem; margin: 0; max-width: 66ch; }
+</style>
+
+<main class="wrap">
+  <header>
+    <h1>Back-of-the-Envelope</h1>
+    <p class="lede">Random estimation problems with round numbers. Type a quick estimate, see how many times off you were, and read the worked steps. Within a factor of two counts as good, because that is what a decision needs.</p>
+  </header>
+
+  <div class="topics" id="topics" aria-label="Topics to practice"></div>
+  <div class="stats" id="stats" aria-live="polite"></div>
+
+  <section class="card" aria-live="polite">
+    <div class="chip" id="chip"></div>
+    <p class="q" id="q"></p>
+    <p class="assume" id="assume"></p>
+    <form class="row" id="form" autocomplete="off">
+      <input type="text" id="ans" inputmode="decimal" aria-label="Your estimate" placeholder="your estimate">
+      <span class="unit" id="unit"></span>
+      <button class="primary" type="submit" id="check">Check</button>
+      <button type="button" id="hint">Hint</button>
+      <button type="button" id="skip">Skip</button>
+    </form>
+    <p class="err" id="err" hidden></p>
+    <p class="hint" id="hinttext" hidden></p>
+    <div class="result" id="result" hidden>
+      <p class="verdict" id="verdict"></p>
+      <ol id="steps"></ol>
+      <p class="remember" id="remember"></p>
+      <p class="from" id="from"></p>
+      <div class="row"><button class="primary" type="button" id="next">Next problem</button></div>
+    </div>
+  </section>
+
+  <p class="note">Numbers like <code>1500</code>, <code>1.5k</code>, <code>2M</code>, <code>3B</code> and <code>1e6</code> are accepted. Scores use the ratio between your answer and the exact one, so 800 against 1,000 is 1.25 times off, the same as 1,250. Your progress is kept in this browser only.</p>
+
+  <details>
+    <summary>Numbers worth memorizing</summary>
+    <div class="ref">
+      <div><h3>Time</h3><ul>
+        <li>1 day = 86,400 s, close to 10<sup>5</sup></li>
+        <li>1 month is about 2.5 million s</li>
+        <li>1 year is about 31.5 million s, close to 3 × 10<sup>7</sup></li>
+      </ul></div>
+      <div><h3>Size</h3><ul>
+        <li>KB 10<sup>3</sup>, MB 10<sup>6</sup>, GB 10<sup>9</sup>, TB 10<sup>12</sup>, PB 10<sup>15</sup> bytes</li>
+        <li>8 bits per byte, so 1 Gbps = 125 MB/s</li>
+      </ul></div>
+      <div><h3>Rules</h3><ul>
+        <li>Concurrency = rate × time (Little's law)</li>
+        <li>Average read = hits × fast + misses × slow</li>
+        <li>A 95% range is about 2 standard errors</li>
+      </ul></div>
+      <div><h3>Latency, rounded and typical</h3><ul>
+        <li>Same-datacenter hop: about 0.5 ms</li>
+        <li>Across an ocean: about 150 ms</li>
+        <li>See the <a href="latency-ladder.html">Latency Ladder</a></li>
+      </ul></div>
+      <div><h3>Defaults used in problems</h3><ul>
+        <li>Postgres allows about 100 connections by default</li>
+        <li>One worker finishes 1 / (time per request) per second</li>
+      </ul></div>
+    </div>
+  </details>
+</main>
+
+<script>
+  (function () {
+    function $(id) { return document.getElementById(id); }
+    function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+    function fmt(x) {
+      if (!isFinite(x)) return "?";
+      var a = Math.abs(x);
+      if (a >= 1e15 || (a > 0 && a < 0.01)) return x.toExponential(2);
+      return Number(x.toPrecision(3)).toLocaleString("en-US", { maximumFractionDigits: a < 10 ? 2 : 0 });
+    }
+    function words(n) {
+      if (n >= 1e9) return n / 1e9 + " billion";
+      if (n >= 1e6) return n / 1e6 + " million";
+      if (n >= 1e3) return n / 1e3 + " thousand";
+      return String(n);
+    }
+    function pct(x) { return Math.round(x * 100) + "%"; }
+
+    // each topic builds one random problem
+    var TOPICS = [
+      { id: "traffic", name: "Requests per second", from: ["scaling-the-backend.html", "Scaling the Backend"], gen: function () {
+        var N = pick([1e6, 5e6, 2e7, 1e8, 5e8, 2e9]), peak = Math.random() < 0.5, avg = N / 86400;
+        var steps = ["A day is 86,400 seconds, close to 100,000.", "Average = " + words(N) + " / 86,400 = about " + fmt(avg) + " per second."];
+        if (peak) steps.push("Peak = 3 × average = about " + fmt(avg * 3) + " per second.");
+        return { q: words(N) + " requests arrive per day, spread evenly. " + (peak ? "At the busiest moment the rate is 3 times the average. What is the peak rate?" : "What is the average rate?"),
+          unit: "requests per second", ans: peak ? avg * 3 : avg, assume: "Use 86,400 seconds per day.", steps: steps,
+          remember: "Divide a per-day count by about 10^5 to get a per-second rate." };
+      } },
+      { id: "storage", name: "Storage", from: null, gen: function () {
+        var U = pick([1e5, 1e6, 1e7, 5e7, 1e8]), k = pick([1, 2, 5, 10]), s = pick([1, 2, 5, 10, 50, 100]), r = pick([1, 3]);
+        var kb = U * k * 365 * s * r, ans = kb / 1e9;
+        return { q: words(U) + " users each add " + k + " item" + (k > 1 ? "s" : "") + " per day, and each item is " + s + " KB. How much storage does one year need" + (r > 1 ? ", with " + r + " copies of everything" : ", keeping one copy") + "?",
+          unit: "TB", ans: ans, assume: "Use 365 days, and 1 TB = 10^9 KB.",
+          steps: ["Items per year = " + words(U) + " × " + k + " × 365 = " + fmt(U * k * 365) + ".", "Size = " + fmt(U * k * 365) + " × " + s + " KB" + (r > 1 ? " × " + r + " copies" : "") + " = " + fmt(kb) + " KB.", "1 TB is 10^9 KB, so that is about " + fmt(ans) + " TB."],
+          remember: "Count items, multiply by size, then by copies. Convert units last." };
+      } },
+      { id: "bandwidth", name: "Bandwidth", from: null, gen: function () {
+        var Q = pick([1e3, 5e3, 2e4, 1e5]), s = pick([5, 20, 50, 200, 1000]), mbs = Q * s / 1000, ans = mbs * 8 / 1000;
+        return { q: "A service sends " + words(Q) + " responses per second, each " + s + " KB. How much outbound bandwidth is that?",
+          unit: "Gbps", ans: ans, assume: "Use 1 KB = 1,000 bytes and 8 bits per byte.",
+          steps: [words(Q) + " × " + s + " KB = " + fmt(Q * s) + " KB per second, or " + fmt(mbs) + " MB per second.", "× 8 bits per byte = " + fmt(mbs * 8) + " megabits per second.", "÷ 1,000 = about " + fmt(ans) + " Gbps."],
+          remember: "Bytes to bits is × 8. A 10 Gbps link carries about 1.25 GB per second." };
+      } },
+      { id: "workers", name: "Workers needed", from: ["scaling-the-backend.html", "Scaling the Backend"], gen: function () {
+        var Q = pick([200, 500, 1000, 5000, 20000]), ms = pick([10, 20, 50, 100, 200]), u = pick([0.5, 0.7]), c = Q * ms / 1000, ans = c / u;
+        return { q: Q.toLocaleString("en-US") + " requests per second arrive, and each ties up a worker for " + ms + " ms. How many workers keep average utilization at " + pct(u) + "?",
+          unit: "workers", ans: ans, assume: "Little's law: concurrency = rate × time.",
+          steps: ["Concurrency = " + Q.toLocaleString("en-US") + " × " + ms / 1000 + " s = " + fmt(c) + " workers busy on average.", "At " + pct(u) + " utilization you need " + fmt(c) + " / " + u + " = about " + fmt(ans) + " workers."],
+          remember: "Busy workers = requests per second × seconds per request. Add headroom on top." };
+      } },
+      { id: "latency", name: "Latency budget", from: ["latency-ladder.html", "Latency Ladder"], gen: function () {
+        if (Math.random() < 0.5) {
+          var n = pick([5, 10, 20, 50]), q = pick([0.5, 1, 2, 5]), ans = n * (0.5 + q);
+          return { q: "A page runs " + n + " database queries one after another. Each costs a 0.5 ms network hop plus " + q + " ms of query time. How long do the queries take in total?",
+            unit: "ms", ans: ans, assume: "The queries run in sequence, not in parallel.",
+            steps: ["One query = 0.5 + " + q + " = " + fmt(0.5 + q) + " ms.", n + " in a row = " + n + " × " + fmt(0.5 + q) + " = " + fmt(ans) + " ms."],
+            remember: "Sequential trips add up, so a loop of small queries is expensive. Batch them or run them in parallel." };
+        }
+        var k = pick([2, 3, 5, 8]), a2 = k * 150;
+        return { q: "A checkout needs " + k + " sequential round trips to a server across an ocean. How long do the trips take in total?",
+          unit: "ms", ans: a2, assume: "Use 150 ms per ocean round trip.",
+          steps: [k + " × 150 ms = " + fmt(a2) + " ms."], remember: "Each round trip across an ocean costs about 150 ms, so cut the number of trips before anything else." };
+      } },
+      { id: "queue", name: "Queue growth", from: ["backpressure.html", "Backpressure"], gen: function () {
+        var a = pick([100, 120, 150, 200]), c = pick([80, 100]), d = pick([10, 30, 60, 120]);
+        if (a <= c) a = c + 40;
+        var len = (a - c) * d;
+        if (Math.random() < 0.5) {
+          return { q: "A server finishes " + c + " requests per second. For " + d + " seconds, " + a + " arrive per second. How many requests are waiting at the end?",
+            unit: "requests", ans: len, assume: "The queue starts empty and nothing is rejected.",
+            steps: ["The queue grows by " + a + " − " + c + " = " + (a - c) + " per second.", (a - c) + " × " + d + " s = " + fmt(len) + " requests."],
+            remember: "Queue growth = arrival rate minus finishing rate, times the time." };
+        }
+        return { q: "A server finishes " + c + " requests per second. For " + d + " seconds, " + a + " arrive per second. How long would a new arrival wait at the end?",
+          unit: "seconds", ans: len / c, assume: "The queue starts empty and nothing is rejected.",
+          steps: ["The queue grows by " + (a - c) + " per second, so it holds " + (a - c) + " × " + d + " = " + fmt(len) + " requests.", "Wait = queue length / finishing rate = " + fmt(len) + " / " + c + " = about " + fmt(len / c) + " seconds."],
+          remember: "Wait = queue length divided by the finishing rate." };
+      } },
+      { id: "cache", name: "Cache", from: ["cache.html", "How Caches Work"], gen: function () {
+        var h = pick([0.8, 0.9, 0.95, 0.99]);
+        if (Math.random() < 0.5) {
+          var m = pick([2, 5, 10, 20]), ans = h * 0.5 + (1 - h) * (0.5 + m);
+          return { q: "A cache read takes 0.5 ms and a database read takes " + m + " ms. With a " + pct(h) + " hit rate, what is the average read time?",
+            unit: "ms", ans: ans, assume: "A miss pays the cache lookup, then the database read.",
+            steps: ["Hits: " + pct(h) + " × 0.5 ms = " + fmt(h * 0.5) + " ms.", "Misses: " + pct(1 - h) + " × (0.5 + " + m + ") ms = " + fmt((1 - h) * (0.5 + m)) + " ms.", "Total = about " + fmt(ans) + " ms."],
+            remember: "Average = hits × fast + misses × slow. Small changes in hit rate move the misses a lot." };
+        }
+        var Q = pick([1000, 5000, 20000, 100000]), db = Q * (1 - h);
+        return { q: Q.toLocaleString("en-US") + " reads per second arrive, and the cache hit rate is " + pct(h) + ". How many reads per second reach the database?",
+          unit: "reads per second", ans: db, assume: "Every miss goes to the database.",
+          steps: ["Misses = " + pct(1 - h) + " of " + Q.toLocaleString("en-US") + " = about " + fmt(db) + " per second."],
+          remember: "Database load = total reads × miss rate. Going from 90% to 99% hits cuts it tenfold." };
+      } },
+      { id: "connections", name: "Database connections", from: ["web-server-models.html", "Web Server Models"], gen: function () {
+        var i = pick([3, 5, 10, 20, 50]), p = pick([1, 4, 8, 9]), c = pick([1, 5, 10, 20]), ans = i * p * c;
+        return { q: i + " app instances each run " + p + " process" + (p > 1 ? "es" : "") + ", and each process has a pool of up to " + c + " database connections. What is the most connections the database could see?",
+          unit: "connections", ans: ans, assume: "Every pool is full at the same time.",
+          steps: [i + " × " + p + " × " + c + " = " + fmt(ans) + " connections.", ans > 100 ? "That is over Postgres's default of about 100 by " + fmt(ans - 100) + "." : "That fits under Postgres's default of about 100."],
+          remember: "Instances × processes × pool size. Check it against the database's limit before you scale out." };
+      } },
+      { id: "baserate", name: "Rare positives", from: ["ml-eval-classification.html", "Evaluating Classifiers"], gen: function () {
+        var pr = pick([0.005, 0.01, 0.02, 0.05]), r = pick([0.8, 0.9]), f = pick([0.02, 0.05, 0.1]), N = 100000;
+        var pos = N * pr, tp = pos * r, fp = (N - pos) * f, ans = tp / (tp + fp) * 100;
+        return { q: "Of 100,000 items, " + (pr * 100) + "% are truly positive. A model finds " + pct(r) + " of the positives and wrongly flags " + pct(f) + " of the negatives. Of the items it flags, what percent are truly positive?",
+          unit: "%", ans: ans, assume: "This is the model's precision.",
+          steps: ["Positives = " + fmt(pos) + ". Found = " + pct(r) + " × " + fmt(pos) + " = " + fmt(tp) + ".", "Negatives = " + fmt(N - pos) + ". False alarms = " + pct(f) + " × " + fmt(N - pos) + " = " + fmt(fp) + ".", "Precision = " + fmt(tp) + " / (" + fmt(tp) + " + " + fmt(fp) + ") = about " + fmt(ans) + "%."],
+          remember: "When positives are rare, even a small false alarm rate floods the flagged items with negatives." };
+      } },
+      { id: "samplesize", name: "Test set size", from: ["ml-eval-classification.html", "Evaluating Classifiers"], gen: function () {
+        var m = pick([0.01, 0.02, 0.03, 0.05]), p = pick([0.5, 0.8, 0.9]), n = 4 * p * (1 - p) / (m * m);
+        return { q: "A model's accuracy is around " + pct(p) + ". About how many test items do you need to measure it to within plus or minus " + (m * 100) + (m === 0.01 ? " point" : " points") + " (a 95% range)?",
+          unit: "test items", ans: n, assume: "A 95% range is about 2 standard errors. Standard error = sqrt(p × (1 − p) / n).",
+          steps: ["2 × sqrt(p(1 − p) / n) = " + m + ", so n = 4 × p(1 − p) / " + m + "².", "4 × " + p + " × " + fmt(1 - p) + " / " + fmt(m * m) + " = about " + fmt(n) + " items."],
+          remember: "Halving the range needs four times the data." };
+      } },
+      { id: "transfer", name: "Transfer time", from: null, gen: function () {
+        var X = pick([10, 50, 100, 500, 1000]), g = pick([1, 10, 25, 100]), hrs = X * 8000 / g / 3600;
+        return { q: "You need to copy " + X + " TB over a " + g + " Gbps link running at full speed. How long does it take?",
+          unit: "hours", ans: hrs, assume: "1 TB = 8,000 gigabits.",
+          steps: [X + " TB × 8,000 = " + fmt(X * 8000) + " gigabits.", "÷ " + g + " Gbps = " + fmt(X * 8000 / g) + " seconds.", "÷ 3,600 = about " + fmt(hrs) + " hours."],
+          remember: "Terabytes × 8,000 gives gigabits. Divide by the link speed, then convert seconds to hours." };
+      } }
+    ];
+
+    // progress, kept only in this browser
+    var KEY = "envelope-stats-v1", stats = { done: 0, good: 0, streak: 0, best: 0, by: {} };
+    try { var raw = localStorage.getItem(KEY); if (raw) stats = JSON.parse(raw); } catch (e) { /* storage may be blocked */ }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(stats)); } catch (e) { /* storage may be blocked */ } }
+    function drawStats() {
+      var share = stats.done ? Math.round(100 * stats.good / stats.done) : 0;
+      $("stats").innerHTML = "<span>tried <b>" + stats.done + "</b></span><span>within 2× <b>" + share + "%</b></span><span>streak <b>" + stats.streak + "</b></span><span>best <b>" + stats.best + "</b></span>";
+    }
+
+    var topicsEl = $("topics");
+    TOPICS.forEach(function (t) {
+      var l = document.createElement("label");
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = true; cb.value = t.id;
+      l.appendChild(cb);
+      l.appendChild(document.createTextNode(t.name));
+      topicsEl.appendChild(l);
+    });
+    function active() {
+      var on = Array.prototype.filter.call(topicsEl.querySelectorAll("input"), function (c) { return c.checked; }).map(function (c) { return c.value; });
+      var list = TOPICS.filter(function (t) { return on.indexOf(t.id) > -1; });
+      return list.length ? list : TOPICS;
+    }
+
+    var cur = null, answered = false, hinted = false;
+    function parse(s) {
+      var m = /^\s*([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)\s*([kmbt])?/i.exec(String(s).replace(/,/g, ""));
+      if (!m) return NaN;
+      var mult = { k: 1e3, m: 1e6, b: 1e9, t: 1e12 }[(m[2] || "").toLowerCase()] || 1;
+      return parseFloat(m[1]) * mult;
+    }
+    function nextProblem() {
+      var t = pick(active());
+      cur = t.gen();
+      cur.topic = t;
+      answered = false; hinted = false;
+      $("chip").textContent = t.name;
+      $("q").textContent = cur.q;
+      $("assume").textContent = cur.assume;
+      $("unit").textContent = cur.unit;
+      $("ans").value = "";
+      $("err").hidden = true; $("hinttext").hidden = true; $("result").hidden = true;
+      $("check").disabled = false;
+      $("ans").focus();
+    }
+    function check(e) {
+      e.preventDefault();
+      if (answered) return;
+      var v = parse($("ans").value);
+      if (!isFinite(v) || v <= 0) {
+        $("err").textContent = "Enter a positive number, such as 1500, 1.5k or 2M.";
+        $("err").hidden = false;
+        return;
+      }
+      $("err").hidden = true;
+      answered = true;
+      var f = Math.max(v / cur.ans, cur.ans / v), tier = f <= 1.25 ? "Great" : (f <= 2 ? "Good" : "Off");
+      var ok = f <= 2;
+      stats.done++;
+      if (ok) { stats.good++; stats.streak++; stats.best = Math.max(stats.best, stats.streak); } else { stats.streak = 0; }
+      var by = stats.by[cur.topic.id] || { n: 0, ok: 0 };
+      by.n++; if (ok) by.ok++;
+      stats.by[cur.topic.id] = by;
+      save(); drawStats();
+      $("verdict").textContent = tier + ": you said " + fmt(v) + ", the answer is about " + fmt(cur.ans) + " " + cur.unit + ", which is " + (f < 1.05 ? "essentially exact" : f.toFixed(1) + " times " + (v > cur.ans ? "too high" : "too low")) + ".";
+      var ol = $("steps");
+      ol.innerHTML = "";
+      cur.steps.forEach(function (s) { var li = document.createElement("li"); li.textContent = s; ol.appendChild(li); });
+      $("remember").textContent = "Remember: " + cur.remember;
+      var from = $("from");
+      from.innerHTML = "";
+      if (cur.topic.from) {
+        from.appendChild(document.createTextNode("Background: "));
+        var a = document.createElement("a");
+        a.href = cur.topic.from[0]; a.textContent = cur.topic.from[1];
+        from.appendChild(a);
+      }
+      $("result").hidden = false;
+      $("check").disabled = true;
+      $("next").focus();
+    }
+    $("form").addEventListener("submit", check);
+    $("hint").addEventListener("click", function () {
+      if (answered) return;
+      $("hinttext").textContent = "Hint: " + cur.assume + " First step: " + cur.steps[0];
+      $("hinttext").hidden = false;
+      hinted = true;
+    });
+    $("skip").addEventListener("click", nextProblem);
+    $("next").addEventListener("click", nextProblem);
+    topicsEl.addEventListener("change", nextProblem);
+    drawStats();
+    nextProblem();
+  })();
+</script>
