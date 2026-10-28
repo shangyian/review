@@ -315,6 +315,16 @@
           <p>Some work takes seconds or minutes, such as processing a video, building a report, sending email or running a model. A request that waits for it ties up a worker for that whole time, which from screen 3 means less capacity for everyone, and the user may hit a timeout.</p></div>
         <div class="blk"><h3>The fix</h3>
           <p>Accept the request, write a job to a durable queue, and reply at once with "accepted" and a job ID. Separate workers pick the job up later. The user checks back or is notified.</p></div>
+        <div class="blk"><h3>Getting the result back</h3>
+          <p>The browser still has to learn when the job finishes. There are four common ways, and the page's JavaScript starts all of them:</p>
+          <ul>
+            <li><b>Short polling:</b> a timer asks "done yet?" every few seconds. Each ask is an ordinary request that the server answers at once. It is simple, but most answers are empty and the result can arrive up to one interval late.</li>
+            <li><b>Long polling:</b> the same kind of request, except the server holds it open until the job finishes or about 30 seconds pass. The browser then asks again. There are far fewer empty answers and the result arrives quickly, but a connection stays open for each waiting user. The wait must stay shorter than every timeout between the browser and the server.</li>
+            <li><b>Server-sent events:</b> one HTTP request that the server never finishes, with updates streamed into it. It is one-way, and the browser reconnects by itself.</li>
+            <li><b>WebSocket:</b> a request asks to upgrade, and the same connection then carries messages both ways. It is a different protocol and needs server support.</li>
+          </ul>
+          <p>The last three hold a connection for each waiting user, so they need a server that can hold many clients while running few requests. <a href="web-server-models.html">How web servers run many requests at once &rarr;</a></p>
+          <p>Workers face the same choice when they fetch jobs from the queue. Amazon SQS, for example, answers a short-polling receive at once even if the queue is empty, while a long-polling receive waits up to 20 seconds for a message, which cuts empty responses and cost. <a class="src" href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html" target="_blank" rel="noopener">source</a></p></div>
         <div class="blk"><h3>What a request touches</h3>
           <p>A short path: app to queue (a network hop and a durable write, a few milliseconds), then the reply. The slow work runs off the request path.</p></div>
         <div class="blk"><h3>The price</h3>
@@ -390,6 +400,7 @@
       <li>Gunicorn, <a href="https://gunicorn.org/design/" target="_blank" rel="noopener">design</a> (worker types, worker count, buffering proxy).</li>
       <li>nginx, <a href="https://nginx.org/en/docs/ngx_core_module.html#worker_connections" target="_blank" rel="noopener">core module</a> (<code>worker_connections</code>, <code>worker_processes</code>) and <a href="https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale" target="_blank" rel="noopener">Inside NGINX</a> (event-driven design).</li>
       <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">Little's law</a>.</li>
+      <li>Amazon SQS Developer Guide, <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html" target="_blank" rel="noopener">short and long polling</a> (default behavior and the 20-second maximum wait).</li>
       <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/PACELC_design_principle" target="_blank" rel="noopener">PACELC design principle</a>, which cites Daniel Abadi, <em>Consistency Tradeoffs in Modern Distributed Database System Design</em>.</li>
     </ol>
   </section>
