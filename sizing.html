@@ -1,0 +1,567 @@
+<title>Sizing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* One small model, evaluated step by step; a sticky panel changes with the screen and the controls. */
+  :root {
+    --bg: #F4F6F9; --fg: #14212F; --muted: #566577; --track: #E6EAF0; --rule: #CBD3DD;
+    --cpu: #8DB8E8; --ram: #6A9FDB; --ssd: #4A85CB; --hop: #2F6BB5; --ocean: #123A78; --hl: #D9480F;
+    --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+      --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D131A; --fg: #E6ECF3; --muted: #93A1B2; --track: #18212B; --rule: #2C3846;
+    --cpu: #3C6A9C; --ram: #4E80B5; --ssd: #6496CB; --hop: #7DADDF; --ocean: #BDDBFA; --hl: #FF8A4C;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 16px; padding-block: 32px 56px; }
+  .wrap { max-width: 1200px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .lede { color: var(--muted); margin: 12px 0 0; max-width: 64ch; }
+  a { color: inherit; }
+
+  .layout { display: grid; grid-template-columns: 520px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .layout aside { position: sticky; top: 16px; }
+  .layout figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .layout figcaption { font-size: 0.75rem; color: var(--muted); }
+  .layout svg { width: 100%; max-height: calc(100vh - 60px); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout aside { position: static; max-width: 560px; }
+    .layout svg { max-height: none; }
+  }
+
+  .ml .t { fill: var(--fg); font: 11px var(--mono); }
+  .ml .tb { fill: var(--fg); font: 600 11px var(--mono); }
+  .ml .m { fill: var(--muted); font: 10px var(--mono); }
+  .ml .ln { stroke: var(--muted); stroke-width: 1.25; fill: none; }
+  .ml .thin { stroke: var(--rule); stroke-width: 1; fill: none; }
+  .ml .dash { stroke-dasharray: 5 4; }
+  .ml rect.ent { fill: var(--bg); stroke: var(--c); stroke-width: 2; }
+  .ml .pos { fill: var(--ocean); stroke: var(--ocean); stroke-width: 1.5; }
+  .ml .neg { fill: var(--bg); stroke: var(--ssd); stroke-width: 1.5; }
+  .ml .err { fill: none; stroke: var(--fg); stroke-width: 1.25; stroke-dasharray: 2 2; }
+  .ml .testring { fill: none; stroke: var(--hop); stroke-width: 2; }
+  .ml .shade { fill: var(--track); }
+  .ml .bar { fill: var(--ram); }
+  .ml .bar.sel { fill: var(--ocean); }
+  .ml .barbg { fill: var(--track); }
+  .ml .handle { fill: var(--fg); }
+  .ml .cell { fill: var(--track); stroke: var(--rule); }
+  .ml .cell.good { fill: var(--cpu); }
+  .ml g[data-s] { display: none; }
+  .ml g[data-s].show { display: inline; }
+  .ml #strip-hit { cursor: ew-resize; fill: transparent; }
+
+  .stack { display: flex; flex-direction: column; min-width: 0; }
+  .screen { display: flex; flex-direction: column; gap: 12px; padding-block: 28px; border-top: 1px solid var(--rule); min-height: 70vh; }
+  .screen:first-child { border-top: 0; padding-top: 0; }
+  .screen h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .screen h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .blk h3 { margin: 0 0 2px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .blk p { margin: 0 0 6px; max-width: 66ch; }
+  .blk ul { margin: 0 0 6px; padding-left: 1.1em; max-width: 66ch; display: flex; flex-direction: column; gap: 4px; }
+  .blk code { font-family: var(--mono); font-size: 0.875em; }
+  .hero { display: flex; flex-direction: column; gap: 12px; }
+  .hero h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; text-wrap: balance; }
+  .hero h2 .rank { font-family: var(--mono); font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .hero svg { width: 100%; height: auto; max-width: 1168px; }
+  .ml a text { fill: var(--hop); text-decoration: underline; cursor: pointer; }
+  .ml .soon { fill: var(--muted); font: italic 12px var(--mono); }
+  .hero svg :is(rect, path, text) { transition: stroke 0.2s, fill 0.2s; }
+  .hero svg.looping rect.ent[data-loop] { stroke: var(--hl); }
+  .hero svg.looping path[data-loop] { stroke: var(--hl); stroke-width: 2.5; marker-end: url(#hah-hl); }
+  .hero svg.looping text[data-loop] { fill: var(--hl); }
+  .hero svg.looping path[data-loop]:not([marker-end]) { marker-end: none; }
+  .hover-note text { text-decoration: underline dotted; cursor: help; }
+  .hover-note:focus { outline: none; }
+  .ml .hb { fill: var(--fg); font: 600 13px var(--mono); }
+  .ml .ht { fill: var(--fg); font: 12px var(--mono); }
+  .ml .hm { fill: var(--muted); font: 12px var(--mono); }
+  .ml rect.bar6 { fill: var(--c); }
+  .ml .big { fill: var(--fg); font: 600 26px var(--mono); }
+  .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 12px; background: var(--track); border-radius: 4px; max-width: 66ch; font-size: 0.9375rem; }
+  .ctl label { display: flex; align-items: center; gap: 8px; }
+  .ctl input[type="range"] { width: 180px; accent-color: var(--hop); }
+  .ctl output { font-family: var(--mono); font-size: 0.875rem; min-width: 3.5em; }
+  .ctl button { font: inherit; padding: 2px 10px; border: 1px solid var(--muted); background: var(--bg); color: var(--fg); border-radius: 4px; cursor: pointer; }
+  .tag { margin: -6px 0 0; font: 12px var(--mono); color: var(--muted); max-width: 66ch; }
+  .note { color: var(--muted); font-size: 0.875rem; max-width: 66ch; margin: 0; }
+
+a.back{font-size:13px;color:var(--muted);text-decoration:none}
+a.back:hover{text-decoration:underline}
+a.src{font-size:12px;color:var(--muted)}
+.sources{margin-top:48px;padding-top:16px;border-top:1px solid var(--rule);font-size:14px}
+.sources h2{font-size:16px}
+.sources li{margin:6px 0}
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <header>
+    <a class="back" href="system-design.html">&larr; System Design</a>
+    <h1>Sizing</h1>
+    <p class="lede">How big does a system need to be? Sizing is a short method, applied to every resource, and checked two ways. The drawing is a live calculator, and the last screen sizes a real job cluster.</p>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <figure>
+        <svg class="ml" id="ml" viewBox="0 0 520 620" role="img" aria-labelledby="ml-title">
+          <title id="ml-title">A live calculator for sizing. It shows jobs running over time and the count in flight, the machines each resource needs, the cost of high utilization, how the deadline sets cluster size, how zones multiply capacity, unit conversions, and a job cluster case.</title>
+          <defs>
+            <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
+            </marker>
+          </defs>
+          <text class="m" id="prog" x="10" y="14">screen 1 of 7</text>
+          <g data-s="1" id="s1"></g>
+          <g data-s="2" id="s2"></g>
+          <g data-s="3" id="s3"></g>
+          <g data-s="4" id="s4"></g>
+          <g data-s="5" id="s5"></g>
+          <g data-s="6" id="s6"></g>
+          <g data-s="7" id="s7"></g>
+        </svg>
+        <figcaption>Live calculator, run in your browser.</figcaption>
+      </figure>
+    </aside>
+
+    <div class="stack">
+
+      <section class="screen" data-n="1" id="sec-1">
+        <h2><span class="rank">1</span>Rate times time gives a count</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>Sizing starts with two numbers: how fast work arrives, and how long each piece stays. Multiply them to get how many pieces are in the system at once, then multiply by what each one uses. This is Little's law: the average number in a system equals the arrival rate times the average time each item spends in it. It holds for any system you draw a boundary around, and for any arrival pattern, as long as the system is steady. <a class="src" href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">source</a></p></div>
+        <div class="ctl">
+          <label>jobs in the window <input type="range" min="50" max="1000" step="10" value="300" data-k="n1"><output data-out="n1">300</output></label>
+          <label>window <input type="range" min="1" max="24" step="1" value="12" data-k="win"><output data-out="win">12 h</output></label>
+          <label>minutes per job <input type="range" min="5" max="120" step="1" value="22" data-k="min1"><output data-out="min1">22 min</output></label>
+          <label>GPUs per job <input type="range" min="1" max="8" step="0.5" value="2.5" data-k="g1"><output data-out="g1">2.5</output></label>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Each bar is a job running over a 3-hour slice, and the dashed line marks one moment. The jobs the line crosses are the jobs in flight, which matches rate times time. Multiply by GPUs per job and you have the GPUs busy on average. The units must cancel: jobs per hour times hours leaves a plain count.</p></div>
+      </section>
+
+      <section class="screen" data-n="2" id="sec-2">
+        <h2><span class="rank">2</span>Size every resource and take the biggest</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>One request uses CPU, memory, network, and connections, and each runs out at a different point. Work out how many machines each resource needs, then buy for the largest. Google's SRE book makes a related point: measure capacity in resources such as CPU cores, not in requests per second, because the cost of a request varies and shifts over time. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a></p></div>
+        <div class="ctl">
+          <label>requests per second <input type="range" min="100" max="5000" step="100" value="1000" data-k="rps"><output data-out="rps">1000</output></label>
+          <label>CPU per request <input type="range" min="1" max="200" step="1" value="50" data-k="cpums"><output data-out="cpums">50 ms</output></label>
+          <label>time in flight <input type="range" min="10" max="3000" step="10" value="200" data-k="lat"><output data-out="lat">200 ms</output></label>
+          <label>memory per request <input type="range" min="1" max="500" step="1" value="50" data-k="mb"><output data-out="mb">50 MB</output></label>
+          <label>response size <input type="range" min="1" max="2000" step="1" value="200" data-k="kb"><output data-out="kb">200 KB</output></label>
+        </div>
+        <div class="ctl">
+          <button type="button" data-preset="cpu">CPU-heavy</button>
+          <button type="button" data-preset="net">download-heavy</button>
+          <button type="button" data-preset="mem">memory-heavy</button>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Each bar is the number of machines that one resource needs. The machine is 8 vCPU, 32 GB and 10 Gbps, run at your target utilization. The highest bar decides the fleet size, so the preset buttons move the answer between CPU, network and memory. Memory depends on how long a request stays in flight (requests in flight = rate × time), which is why a slow request is expensive even when it uses little CPU.</p></div>
+      </section>
+
+      <section class="screen" data-n="3" id="sec-3">
+        <h2><span class="rank">3</span>Average, peak, and headroom</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>You pay for the peak, not the average, and you don't run flat out at the peak. Two adjustments: multiply the average by how much higher the peak is, and divide by a target utilization below 100%.</p></div>
+        <div class="ctl">
+          <label>target utilization <input type="range" min="10" max="98" step="1" value="70" data-k="util"><output data-out="util">70%</output></label>
+          <label>peak is this many times the average <input type="range" min="1" max="6" step="0.5" value="2" data-k="peak"><output data-out="peak">2×</output></label>
+        </div>
+        <div class="blk"><h3>Why not 100%</h3>
+          <p>The curve uses the simplest queueing model, one server with random arrivals and random service times. There the average time in the system is the service time divided by (1 − utilization). <a class="src" href="https://en.wikipedia.org/wiki/M/M/1_queue" target="_blank" rel="noopener">source</a> At 50% utilization that is 2 times the service time, at 70% about 3.3 times, at 90% 10 times, and as utilization approaches 100% it grows without limit. Real systems differ from this model, but the shape is the same: delay climbs steeply near full. That is why headroom is worth paying for.</p>
+          <p>The bars below the curve show average, peak, and the capacity you must provision to hold your target utilization at the peak.</p></div>
+      </section>
+
+      <section class="screen" data-n="4" id="sec-4">
+        <h2><span class="rank">4</span>Work divided by the deadline</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>For batch work, nobody needs the answer instantly, so size from the total. Add up the work, divide by the time allowed, and that is the capacity busy on average. The overnight jobs here are 500 jobs of 8 GPUs for 30 minutes, plus 30 monster jobs of 100 GPUs for 3 hours.</p></div>
+        <div class="ctl">
+          <label>finish within <input type="range" min="4" max="96" step="2" value="24" data-k="deadline"><output data-out="deadline">24 h</output></label>
+          <label>target utilization <input type="range" min="10" max="98" step="1" value="70" data-k="util"><output data-out="util">70%</output></label>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Total work is 2,000 + 9,000 = 11,000 GPU-hours. Divide by the deadline to get GPUs busy, then by utilization to get GPUs to provision. Finishing by morning needs about ten times what a four-day deadline needs. A longer deadline lowers the cluster size in direct proportion, so the question to ask is how long the work may wait.</p></div>
+      </section>
+
+      <section class="screen" data-n="5" id="sec-5">
+        <h2><span class="rank">5</span>Surviving a failure</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>Capacity you need on a good day is not capacity you need on a bad one. If you spread across Z zones and want to survive losing one, the remaining Z − 1 zones must carry everything, so the total grows by Z ÷ (Z − 1). With 3 zones that is 1.5 times, with 2 zones it is 2 times, with 6 zones 1.2 times.</p></div>
+        <div class="ctl">
+          <label>capacity needed <input type="range" min="10" max="1000" step="10" value="300" data-k="need"><output data-out="need">300</output></label>
+          <label>zones <input type="range" min="2" max="6" step="1" value="3" data-k="zones"><output data-out="zones">3</output></label>
+          <label><input type="checkbox" data-k="insure"> provision to survive losing a zone</label>
+          <label><input type="checkbox" data-k="zoneDown"> a zone is down now</label>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Each column is a zone. The outline is the capacity you bought, and the fill is the load. Without the extra capacity, losing a zone pushes the others past 100%, shown in orange. More zones make survival cheaper, but each added zone also adds operating cost and cross-zone traffic.</p>
+          <p>Big jobs add a second problem. A job that needs 100 GPUs at once needs 100 free GPUs, usually on connected machines, so a cluster can have idle GPUs and still be unable to start it. Leave extra room for the largest job.</p></div>
+      </section>
+
+      <section class="screen" data-n="6" id="sec-6">
+        <h2><span class="rank">6</span>Unit traps and checks</h2>
+        <div class="blk"><h3>Traps</h3>
+          <ul>
+            <li><b>Bits and bytes.</b> A link quoted in Gbps counts bits, and there are 8 bits in a byte. Gbps to GB/s means dividing by 8.</li>
+            <li><b>Prefixes.</b> A bigger unit means a smaller number: 1,000,000 KB is 1,000 MB.</li>
+            <li><b>Time units.</b> A rate gets smaller when the time unit gets smaller. 30 per hour is 0.5 per minute, not 1,800.</li>
+            <li><b>Dropped digits.</b> Slips of a factor of 10 are the most common.</li>
+          </ul></div>
+        <div class="ctl">
+          <label>link speed <input type="range" min="1" max="400" step="1" value="10" data-k="link"><output data-out="link">10 Gbps</output></label>
+          <label>data to move <input type="range" min="1" max="1000" step="1" value="500" data-k="tb"><output data-out="tb">500 TB</output></label>
+        </div>
+        <div class="blk"><h3>Checks</h3>
+          <p>Do the estimate two ways. Rate × time × size gives GPUs busy, and total work ÷ the window should match, as the drawing shows with the screen 1 numbers. When two routes disagree, one has a slip. Then ask whether the answer is plausible, and treat anything within a factor of 2 as a good estimate. When the number matters, replace assumptions with a load test.</p></div>
+      </section>
+
+      <section class="screen" data-n="7" id="sec-7">
+        <h2><span class="rank">7</span>The case: size a job cluster</h2>
+        <div class="blk"><h3>The requirements</h3>
+          <ul>
+            <li><b>Daytime:</b> 300 jobs over 12 hours, each 15 to 30 minutes, each using 1 to 4 GPUs.</li>
+            <li><b>Overnight:</b> about 500 jobs of 8 GPUs for 30 minutes, and about 30 monster jobs of 100 GPUs for 3 hours.</li>
+          </ul></div>
+        <div class="ctl">
+          <label>monster jobs <input type="range" min="0" max="60" step="1" value="30" data-k="nMon"><output data-out="nMon">30</output></label>
+          <label>GPUs per monster <input type="range" min="20" max="200" step="10" value="100" data-k="gMon"><output data-out="gMon">100</output></label>
+          <label>finish within <input type="range" min="4" max="96" step="2" value="24" data-k="deadline"><output data-out="deadline">24 h</output></label>
+          <label>target utilization <input type="range" min="10" max="98" step="1" value="70" data-k="util"><output data-out="util">70%</output></label>
+          <label><input type="checkbox" data-k="insure"> survive losing 1 of <span id="zlabel">3</span> zones</label>
+        </div>
+        <div class="blk"><h3>The estimate</h3>
+          <p><b>Daytime.</b> 300 jobs over 12 hours is 25 jobs per hour. At 15 to 30 minutes that is 6 to 12.5 jobs in flight, and at 1 to 4 GPUs each, between 6 and 50 GPUs busy, about 23 with middle values. Daytime work totals only about 281 GPU-hours.</p>
+          <p><b>Overnight.</b> 500 × 8 × 0.5 = 2,000 GPU-hours of regular jobs, and 30 × 100 × 3 = 9,000 GPU-hours of monsters. The monsters are over 80% of the work. Divide by the deadline: finishing in 12 hours takes about 917 GPUs busy, and in 24 hours about 458. Divide by the utilization target for what to buy, and multiply by the zone factor if you must survive a zone loss.</p>
+          <p><b>What to decide.</b> The monsters decide everything, so the useful questions are whether they have a deadline or can take days, whether they can be spread across nights, and whether a 100-GPU, 3-hour job can run on 50 GPUs for 6 hours. If the work scales that way, the GPU-hours stay the same but the peak need halves. Whatever you buy, a 100-GPU job needs 100 GPUs free together.</p></div>
+        <p class="note">The job sizes and counts are example numbers. The utilization curve is the simple one-server queueing model, so it overstates or understates real systems. The machine in the screen 2 calculator (8 vCPU, 32 GB, 10 Gbps) and the memory and CPU per request are illustrative.</p>
+      </section>
+
+    </div>
+  </div>
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ol>
+      <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">Little's law</a> (average count = arrival rate × time in system, for any system, in steady state).</li>
+      <li>Wikipedia, <a href="https://en.wikipedia.org/wiki/M/M/1_queue" target="_blank" rel="noopener">M/M/1 queue</a> (mean time in system 1 / (μ − λ), stability when utilization is below 1).</li>
+      <li>Google, <em>Site Reliability Engineering</em>, <a href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">Handling Overload</a> (capacity measured in resources, not requests per second).</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var NS = "http://www.w3.org/2000/svg";
+    function $(id) { return document.getElementById(id); }
+    function el(tag, attrs, parent, text) {
+      var e = document.createElementNS(NS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (text !== undefined) e.textContent = text;
+      parent.appendChild(e);
+      return e;
+    }
+    function clear(g) { while (g.firstChild) g.removeChild(g.firstChild); }
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function label(g, x, y, t, anchor) { return el("text", { "class": "m", x: x, y: y, "text-anchor": anchor || "start" }, g, t); }
+    function bold(g, x, y, t, anchor) { return el("text", { "class": "tb", x: x, y: y, "text-anchor": anchor || "start" }, g, t); }
+    function num(x) {
+      if (!isFinite(x)) return "?";
+      var a = Math.abs(x);
+      if (a >= 100) return Math.round(x).toLocaleString("en-US");
+      if (a >= 10) return (Math.round(x * 10) / 10).toString();
+      return (Math.round(x * 100) / 100).toString();
+    }
+    function hbar(g, x, y, w, h, frac, cls, style) {
+      el("rect", { "class": "barbg", x: x, y: y, width: w, height: h, rx: 2 }, g);
+      el("rect", { "class": "bar" + (cls ? " " + cls : ""), x: x, y: y, width: Math.max(0, Math.min(1, frac)) * w, height: h, rx: 2, style: style || "" }, g);
+    }
+
+    var S = { n1: 300, win: 12, min1: 22, g1: 2.5, rps: 1000, cpums: 50, lat: 200, mb: 50, kb: 200,
+              util: 70, peak: 2, deadline: 24, need: 300, zones: 3, insure: false, zoneDown: false,
+              link: 10, tb: 500, nMon: 30, gMon: 100 };
+    var current = 1;
+    var NREG = 500, GREG = 8, HREG = 0.5, HMON = 3;
+    function overnightHours() { return NREG * GREG * HREG + S.nMon * S.gMon * HMON; }
+
+    // screen 1: jobs over time and the count in flight
+    function drawS1() {
+      var g = $("s1");
+      clear(g);
+      var rate = S.n1 / S.win, d = S.min1 / 60, L = rate * d, gpus = L * S.g1;
+      bold(g, 20, 34, "jobs running over a 3 hour slice");
+      var X0 = 30, W = 460, T = 3, Y0 = 50, H = 200, mid = 1.5;
+      el("rect", { x: X0, y: Y0, width: W, height: H, "class": "thin" }, g);
+      var lanes = [], placed = [], k, cross = 0;
+      for (k = Math.floor(-d * rate); k / rate <= T; k++) {
+        var s0 = k / rate;
+        if (s0 + d < 0) continue;
+        var lane = 0;
+        while (lanes[lane] !== undefined && lanes[lane] > s0 + 1e-9) lane++;
+        lanes[lane] = s0 + d;
+        placed.push([s0, lane]);
+        if (s0 <= mid && s0 + d > mid) cross++;
+      }
+      var lh = Math.min(14, (H - 8) / Math.max(lanes.length, 1));
+      placed.forEach(function (p) {
+        var a0 = clamp(p[0], 0, T), a1 = clamp(p[0] + d, 0, T);
+        el("rect", { x: X0 + a0 / T * W, y: Y0 + 4 + p[1] * lh, width: Math.max(1, (a1 - a0) / T * W - 1), height: Math.max(1.5, lh - 2), fill: "var(--ssd)" }, g);
+      });
+      var mx = X0 + mid / T * W;
+      el("path", { "class": "ln dash", d: "M" + mx + " " + Y0 + "V" + (Y0 + H), style: "stroke: var(--hl); stroke-width: 2" }, g);
+      label(g, X0, Y0 + H + 16, "0 h"); label(g, X0 + W, Y0 + H + 16, "3 h", "end");
+      var rows = [
+        ["arrival rate", num(rate) + " jobs per hour", "= " + S.n1 + " jobs / " + S.win + " h"],
+        ["time per job", num(d) + " hours", "= " + S.min1 + " min / 60"],
+        ["jobs in flight", num(L), "= " + num(rate) + " x " + num(d)],
+        ["GPUs busy on average", num(gpus), "= " + num(L) + " x " + S.g1 + " GPUs"]
+      ];
+      rows.forEach(function (r, i) {
+        var y = 312 + i * 36;
+        label(g, 30, y, r[0]);
+        bold(g, 210, y, r[1]);
+        label(g, 210, y + 15, r[2]);
+      });
+      label(g, 30, 470, "jobs the dashed line crosses: " + cross);
+      hbar(g, 30, 490, 460, 16, gpus / 200, "sel");
+      label(g, 30, 524, "GPUs busy (bar scale 0 to 200)");
+      label(g, 30, 556, "per hour x hours leaves a plain count: the units cancel");
+    }
+
+    // screen 2: machines needed per resource
+    function drawS2() {
+      var g = $("s2"), u = S.util / 100;
+      clear(g);
+      var conc = S.rps * S.lat / 1000, cpuBusy = S.rps * S.cpums / 1000;
+      var res = [
+        ["CPU", cpuBusy / (8 * u), cpuBusy.toFixed(0) + " vCPU busy"],
+        ["memory", conc * S.mb / 1024 / (32 * u), (conc * S.mb / 1024).toFixed(1) + " GB held by " + Math.round(conc) + " in flight"],
+        ["network", S.rps * S.kb * 8 / 1e6 / (10 * u), (S.rps * S.kb * 8 / 1e6).toFixed(2) + " Gbps out"]
+      ];
+      var mx = Math.max.apply(null, res.map(function (r) { return r[1]; })), winner = res.reduce(function (a, b) { return b[1] > a[1] ? b : a; });
+      bold(g, 20, 34, "machines needed, by resource");
+      label(g, 20, 52, "one machine: 8 vCPU, 32 GB, 10 Gbps, at " + S.util + "% utilization");
+      res.forEach(function (r, i) {
+        var y = 90 + i * 100;
+        bold(g, 20, y, r[0]);
+        label(g, 20, y + 16, r[2]);
+        hbar(g, 20, y + 28, 400, 20, mx ? r[1] / mx : 0, r === winner ? "sel" : "");
+        bold(g, 430, y + 44, num(Math.ceil(r[1] * 10) / 10), "start");
+        if (r === winner) label(g, 20, y + 68, "this resource sets the fleet size");
+      });
+      bold(g, 20, 420, "fleet: " + Math.max(1, Math.ceil(mx)) + " machines");
+      label(g, 20, 442, "requests in flight = rate x time in flight = " + num(conc));
+      label(g, 20, 458, "CPU busy = rate x CPU per request = " + num(cpuBusy) + " vCPU");
+      label(g, 20, 490, "Take the highest bar, round up, and add machines for failures.");
+    }
+
+    // screen 3: utilization against delay, and peak provisioning
+    function drawS3() {
+      var g = $("s3"), rho = S.util / 100;
+      clear(g);
+      bold(g, 20, 34, "time in the system, as a multiple of the service time");
+      el("rect", { x: 40, y: 50, width: 460, height: 200, "class": "thin" }, g);
+      var d = "";
+      for (var i = 0; i <= 200; i++) {
+        var r = i / 200 * 0.98, y = 250 - Math.min(1 / (1 - r), 20) / 20 * 200;
+        d += (i ? "L" : "M") + (40 + r / 0.98 * 460).toFixed(1) + " " + y.toFixed(1);
+      }
+      el("path", { "class": "ln", d: d, style: "stroke: var(--hop); stroke-width: 2" }, g);
+      [0.5, 0.7, 0.9].forEach(function (r) {
+        var x = 40 + r / 0.98 * 460;
+        el("path", { "class": "thin", d: "M" + x + " 250V244" }, g);
+        label(g, x, 266, Math.round(r * 100) + "%", "middle");
+      });
+      label(g, 36, 56, "20x", "end"); label(g, 36, 250, "1x", "end");
+      var m = Math.min(1 / (1 - rho), 20), px = 40 + rho / 0.98 * 460, py = 250 - m / 20 * 200;
+      el("circle", { cx: px, cy: py, r: 5, "class": "handle" }, g);
+      bold(g, clamp(px - 6, 40, 380), clamp(py - 10, 66, 250), num(1 / (1 - rho)) + "x at " + S.util + "%", rho > 0.6 ? "end" : "start");
+      label(g, 40, 290, "utilization (busy share of capacity)");
+      var avg = 100, pk = avg * S.peak, cap = pk / rho;
+      bold(g, 20, 332, "provisioning, in units of the average load");
+      [["average load", avg], ["peak load", pk], ["capacity to buy", cap]].forEach(function (r, i) {
+        var y = 356 + i * 52, mxv = Math.max(cap, 1);
+        label(g, 20, y, r[0]);
+        hbar(g, 20, y + 8, 400, 18, r[1] / mxv, i === 2 ? "sel" : "");
+        bold(g, 430, y + 22, Math.round(r[1]), "start");
+      });
+      label(g, 20, 530, "capacity = average x peak ratio / utilization = " + avg + " x " + S.peak + " / " + rho.toFixed(2));
+      label(g, 20, 548, "Simple one-server model; real systems differ but the shape holds.");
+    }
+
+    // screen 4: deadline sets the cluster size
+    function drawS4() {
+      var g = $("s4"), total = overnightHours(), u = S.util / 100;
+      clear(g);
+      bold(g, 20, 34, "GPUs busy and GPUs to buy, by deadline");
+      label(g, 20, 52, "total work: " + Math.round(total).toLocaleString("en-US") + " GPU-hours");
+      var ds = [12, 24, 48, 96], rows = ds.concat([S.deadline]), mx = total / 12 / u;
+      rows.forEach(function (dl, i) {
+        var sel = i === rows.length - 1, y = 86 + i * 66;
+        bold(g, 20, y, (sel ? "your deadline: " : "") + dl + " hours");
+        hbar(g, 20, y + 8, 400, 18, (total / dl / u) / mx, sel ? "sel" : "");
+        el("rect", { x: 20, y: y + 8, width: 400 * (total / dl) / mx, height: 18, rx: 2, style: "fill: none; stroke: var(--ocean); stroke-width: 1.5" }, g);
+        bold(g, 430, y + 22, Math.round(total / dl / u).toLocaleString("en-US"));
+        label(g, 20, y + 42, "busy: " + Math.round(total / dl).toLocaleString("en-US") + "   to buy at " + S.util + "%: " + Math.round(total / dl / u).toLocaleString("en-US"));
+      });
+      label(g, 20, 440, "GPUs busy = total GPU-hours / hours allowed");
+      label(g, 20, 456, "GPUs to buy = busy / target utilization");
+      label(g, 20, 488, "outline: GPUs busy. fill: GPUs to buy.");
+    }
+
+    // screen 5: zones
+    function drawS5() {
+      var g = $("s5"), Z = S.zones, need = S.need;
+      clear(g);
+      var perZoneCap = S.insure ? need / (Z - 1) : need / Z;
+      var total = perZoneCap * Z, up = S.zoneDown ? Z - 1 : Z, load = need / up;
+      bold(g, 20, 34, Z + " zones" + (S.insure ? ", built to survive losing one" : ", sized for the normal load only"));
+      var colW = Math.min(70, (460 - (Z - 1) * 10) / Z), x0 = 30, base = 300, scaleH = 200 / Math.max(need / (Z - 1), load, perZoneCap) / 1.1;
+      for (var i = 0; i < Z; i++) {
+        var down = S.zoneDown && i === Z - 1, x = x0 + i * (colW + 10), h = perZoneCap * scaleH;
+        el("rect", { x: x, y: base - h, width: colW, height: h, rx: 3, fill: "none", stroke: "var(--" + (down ? "muted" : "ssd") + ")", "stroke-width": 2, "stroke-dasharray": down ? "5 4" : "" }, g);
+        if (!down) {
+          var lh = load * scaleH, over = load > perZoneCap + 1e-6;
+          el("rect", { x: x + 3, y: base - Math.min(lh, h * 1.0), width: colW - 6, height: Math.min(lh, h), fill: over ? "var(--hl)" : "var(--cpu)" }, g);
+          if (over) el("rect", { x: x + 3, y: base - lh, width: colW - 6, height: lh - h, fill: "var(--hl)", opacity: 0.5 }, g);
+        } else {
+          label(g, x + colW / 2, base - h / 2, "down", "middle");
+        }
+        label(g, x + colW / 2, base + 16, "zone " + (i + 1), "middle");
+      }
+      var rows = [
+        ["capacity needed", num(need)],
+        ["capacity provisioned", num(total) + (S.insure ? "  (x " + num(Z / (Z - 1)) + ")" : "")],
+        ["load per zone now", num(load) + " of " + num(perZoneCap)],
+        ["status", load > perZoneCap + 1e-6 ? "OVERLOADED: " + num(100 * load / perZoneCap) + "% of capacity" : "fits"]
+      ];
+      rows.forEach(function (r, i) {
+        label(g, 30, 356 + i * 30, r[0]);
+        bold(g, 230, 356 + i * 30, r[1]);
+      });
+      label(g, 30, 500, "To survive losing one of Z zones, buy Z / (Z - 1) times the need.");
+      label(g, 30, 518, "2 zones: 2x. 3 zones: 1.5x. 6 zones: 1.2x.");
+    }
+
+    // screen 6: units
+    function drawS6() {
+      var g = $("s6"), gbs = S.link / 8, tbh = gbs * 3.6, hours = S.tb / tbh;
+      clear(g);
+      bold(g, 20, 34, "from a link speed to a transfer time");
+      var steps = [[S.link + " Gbps", "bits per second"], [num(gbs) + " GB/s", "divide by 8"], [num(tbh) + " TB per hour", "x 3,600 s, / 1,000"], [S.tb + " TB takes " + num(hours) + " h", "data / TB per hour"]];
+      steps.forEach(function (s, i) {
+        var y = 56 + i * 72;
+        el("rect", { "class": "ent", x: 20, y: y, width: 330, height: 48, rx: 4, style: "--c: var(--" + ["cpu", "ram", "ssd", "hop"][i] + ")" }, g);
+        bold(g, 32, y + 22, s[0]);
+        label(g, 32, y + 38, i ? "step: " + s[1] : s[1]);
+        if (i < 3) el("path", { "class": "ln", d: "M185 " + (y + 48) + "V" + (y + 72), "marker-end": "url(#ah)" }, g);
+      });
+      label(g, 20, 364, "the same number, three ways: " + S.link + " Gbps = " + num(gbs) + " GB/s = " + num(gbs * 1000) + " MB/s");
+      var rate = S.n1 / S.win, a = rate * (S.min1 / 60) * S.g1, b = S.n1 * (S.min1 / 60) * S.g1 / S.win;
+      bold(g, 20, 412, "check it two ways, using screen 1's jobs");
+      label(g, 20, 434, "rate x time x GPUs: " + num(rate) + " x " + num(S.min1 / 60) + " x " + S.g1 + " = " + num(a));
+      label(g, 20, 452, "total GPU-hours / window: " + num(S.n1 * (S.min1 / 60) * S.g1) + " / " + S.win + " = " + num(b));
+      label(g, 20, 470, Math.abs(a - b) < 1e-6 ? "They agree. If yours differed, one route has a slip." : "They disagree: one route has a slip.");
+      label(g, 20, 506, "Then ask: is it plausible, and is it within a factor of 2?");
+    }
+
+    // screen 7: the case
+    function drawS7() {
+      var g = $("s7"), u = S.util / 100, Z = S.zones;
+      clear(g);
+      var reg = NREG * GREG * HREG, mon = S.nMon * S.gMon * HMON, total = reg + mon;
+      var busy = total / S.deadline, buy = busy / u, zoneF = S.insure ? Z / (Z - 1) : 1, final = buy * zoneF;
+      bold(g, 20, 34, "overnight work: " + Math.round(total).toLocaleString("en-US") + " GPU-hours");
+      var share = total ? reg / total : 0;
+      el("rect", { x: 20, y: 48, width: 480 * share, height: 22, fill: "var(--ssd)" }, g);
+      el("rect", { x: 20 + 480 * share, y: 48, width: 480 * (1 - share), height: 22, fill: "var(--hl)" }, g);
+      label(g, 20, 88, "regular " + Math.round(reg).toLocaleString("en-US") + " GPU-h (" + Math.round(share * 100) + "%)");
+      label(g, 500, 88, "monsters " + Math.round(mon).toLocaleString("en-US") + " GPU-h (" + Math.round((1 - share) * 100) + "%)", "end");
+      var rows = [
+        ["GPUs busy to finish in " + S.deadline + " h", Math.round(busy).toLocaleString("en-US"), "total / " + S.deadline],
+        ["to buy at " + S.util + "% utilization", Math.round(buy).toLocaleString("en-US"), "busy / " + u.toFixed(2)],
+        [S.insure ? "survive losing 1 of " + Z + " zones" : "no zone-loss cover", Math.round(final).toLocaleString("en-US"), "x " + num(zoneF)]
+      ];
+      var mxv = Math.max(final, 1);
+      rows.forEach(function (r, i) {
+        var y = 130 + i * 70;
+        bold(g, 20, y, r[0]);
+        hbar(g, 20, y + 10, 380, 20, [busy, buy, final][i] / mxv, i === 2 ? "sel" : "");
+        bold(g, 410, y + 26, r[1]);
+        label(g, 20, y + 50, r[2]);
+      });
+      bold(g, 20, 370, "provision about " + Math.round(final).toLocaleString("en-US") + " GPUs");
+      var lone = S.gMon;
+      label(g, 20, 392, "a monster needs " + lone + " GPUs free together");
+      label(g, 20, 410, "daytime jobs add about 281 GPU-hours per day: " + Math.round(281 / 24) + " GPUs busy");
+      label(g, 20, 428, "all work in 24 h: " + Math.round((total + 281) / 24) + " GPUs busy on average");
+      label(g, 20, 466, "Levers: a longer deadline, fewer monsters per night, or");
+      label(g, 20, 482, "running a monster on half the GPUs for twice as long.");
+    }
+
+    function render() {
+      ({ 1: drawS1, 2: drawS2, 3: drawS3, 4: drawS4, 5: drawS5, 6: drawS6, 7: drawS7 })[current]();
+      var units = { win: " h", min1: " min", cpums: " ms", lat: " ms", mb: " MB", kb: " KB", util: "%", peak: "×", deadline: " h", link: " Gbps", tb: " TB" };
+      document.querySelectorAll("[data-out]").forEach(function (o) {
+        var k = o.getAttribute("data-out");
+        o.textContent = S[k] + (units[k] || "");
+      });
+      $("zlabel").textContent = S.zones;
+    }
+    var groups = document.querySelectorAll("#ml g[data-s]");
+    function show(n) {
+      current = Number(n);
+      groups.forEach(function (g) { g.classList.toggle("show", g.getAttribute("data-s") === String(n)); });
+      $("prog").textContent = "screen " + n + " of 7";
+      render();
+    }
+    document.querySelectorAll("[data-k]").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        var k = inp.getAttribute("data-k"), v = inp.type === "checkbox" ? inp.checked : Number(inp.value);
+        S[k] = v;
+        document.querySelectorAll('[data-k="' + k + '"]').forEach(function (o) {
+          if (o.type === "checkbox") o.checked = v; else o.value = v;
+        });
+        render();
+      });
+    });
+    var PRESETS = {
+      cpu: { rps: 1000, cpums: 50, lat: 200, mb: 50, kb: 20 },
+      net: { rps: 5000, cpums: 5, lat: 100, mb: 5, kb: 1000 },
+      mem: { rps: 1000, cpums: 5, lat: 1000, mb: 100, kb: 20 }
+    };
+    document.querySelectorAll("[data-preset]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var p = PRESETS[b.getAttribute("data-preset")];
+        for (var k in p) {
+          S[k] = p[k];
+          document.querySelectorAll('[data-k="' + k + '"]').forEach(function (o) { o.value = p[k]; });
+        }
+        render();
+      });
+    });
+    show(1);
+    if (!("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) show(e.target.getAttribute("data-n")); });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    document.querySelectorAll(".screen[data-n]").forEach(function (s) { io.observe(s); });
+  })();
+</script>
+
+</body>
+</html>
