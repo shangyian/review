@@ -100,6 +100,13 @@
 a.back{font-size:13px;color:var(--muted);text-decoration:none}
 a.back:hover{text-decoration:underline}
 a.src{font-size:12px;color:var(--muted)}
+.intro{margin:8px 0 40px}
+.intro svg{width:100%;height:auto;display:block}
+.grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+html{scroll-behavior:smooth}
+.hit{fill:transparent;cursor:pointer}
+.hit:hover{fill:var(--hl);fill-opacity:.12}
+.screen{scroll-margin-top:24px}
 .sources{margin-top:48px;padding-top:16px;border-top:1px solid var(--rule);font-size:14px}
 .sources h2{font-size:16px}
 .sources li{margin:6px 0}
@@ -114,17 +121,23 @@ a.src{font-size:12px;color:var(--muted)}
     <p class="lede">How big does a system need to be? Sizing is a short method, applied to every resource, and checked two ways. The drawing is a live calculator, and the last screen sizes a real job cluster.</p>
   </header>
 
+  <figure class="intro">
+    <svg class="ml" id="intro-svg" viewBox="0 0 1000 440" role="img" aria-label="Sizing turns four inputs into a need for each of five resources. The biggest need is sized first, then margin is added for latency, growth and availability, and the total sets the cost.">
+      <defs><marker id="ah2" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--muted)"/></marker></defs>
+    </svg>
+  </figure>
+
   <div class="layout">
     <aside>
       <figure>
         <svg class="ml" id="ml" viewBox="0 0 520 620" role="img" aria-labelledby="ml-title">
-          <title id="ml-title">A live calculator for sizing. It shows jobs running over time and the count in flight, the machines each resource needs, the cost of high utilization, how the deadline sets cluster size, how zones multiply capacity, unit conversions, and a job cluster case.</title>
+          <title id="ml-title">A live calculator for sizing. It shows jobs running over time and the count in flight, the machines each resource needs, the cost of high utilization, how the deadline sets cluster size, how zones multiply capacity, unit conversions, how retention grows storage, and a job cluster case.</title>
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto">
               <path d="M0 0L8 4L0 8z" fill="var(--muted)"/>
             </marker>
           </defs>
-          <text class="m" id="prog" x="10" y="14">screen 1 of 7</text>
+          <text class="m" id="prog" x="10" y="14">screen 1 of 8</text>
           <g data-s="1" id="s1"></g>
           <g data-s="2" id="s2"></g>
           <g data-s="3" id="s3"></g>
@@ -132,6 +145,7 @@ a.src{font-size:12px;color:var(--muted)}
           <g data-s="5" id="s5"></g>
           <g data-s="6" id="s6"></g>
           <g data-s="7" id="s7"></g>
+          <g data-s="8" id="s8"></g>
         </svg>
         <figcaption>Live calculator, run in your browser.</figcaption>
       </figure>
@@ -140,81 +154,25 @@ a.src{font-size:12px;color:var(--muted)}
     <div class="stack">
 
       <section class="screen" data-n="1" id="sec-1">
-        <h2><span class="rank">1</span>Rate times time gives a count</h2>
+        <div class="grp">Input: rate and latency</div>
+        <h2><span class="rank">1</span>Rate &times; latency = requests in flight</h2>
         <div class="blk"><h3>The method</h3>
-          <p>Sizing starts with two numbers: how fast work arrives, and how long each piece stays. Multiply them to get how many pieces are in the system at once, then multiply by what each one uses. This is Little's law: the average number in a system equals the arrival rate times the average time each item spends in it. It holds for any system you draw a boundary around, and for any arrival pattern, as long as the system is steady. <a class="src" href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">source</a></p></div>
+          <p>Two inputs set how many requests are in the system at once: how fast work arrives (the rate), and how long each one takes from start to finish (the latency). Multiply them, then multiply by what each one uses. This is Little's law: the average number in a system equals the arrival rate times the average time each item spends in it. It holds for any system you draw a boundary around, and for any arrival pattern, as long as the system is steady. <a class="src" href="https://en.wikipedia.org/wiki/Little%27s_law" target="_blank" rel="noopener">source</a></p></div>
         <div class="ctl">
           <label>jobs in the window <input type="range" min="50" max="1000" step="10" value="300" data-k="n1"><output data-out="n1">300</output></label>
           <label>window <input type="range" min="1" max="24" step="1" value="12" data-k="win"><output data-out="win">12 h</output></label>
-          <label>minutes per job <input type="range" min="5" max="120" step="1" value="22" data-k="min1"><output data-out="min1">22 min</output></label>
+          <label>latency per job <input type="range" min="5" max="120" step="1" value="22" data-k="min1"><output data-out="min1">22 min</output></label>
           <label>GPUs per job <input type="range" min="1" max="8" step="0.5" value="2.5" data-k="g1"><output data-out="g1">2.5</output></label>
         </div>
         <div class="blk"><h3>What you see</h3>
-          <p>Each bar is a job running over a 3-hour slice, and the dashed line marks one moment. The jobs the line crosses are the jobs in flight, which matches rate times time. Multiply by GPUs per job and you have the GPUs busy on average. The units must cancel: jobs per hour times hours leaves a plain count.</p></div>
+          <p>Each bar is a job running over a 3-hour slice, and the dashed line marks one moment. The jobs the line crosses are the jobs in flight, which matches rate times latency. Multiply by GPUs per job and you have the GPUs busy on average. The units must cancel: jobs per hour times hours leaves a plain count.</p></div>
       </section>
 
-      <section class="screen" data-n="2" id="sec-2">
-        <h2><span class="rank">2</span>Size every resource and take the biggest</h2>
+<section class="screen" data-n="6" id="sec-6">
+        <div class="grp">Input: size</div>
+        <h2><span class="rank">2</span>Size: bits versus bytes</h2>
         <div class="blk"><h3>The method</h3>
-          <p>One request uses CPU, memory, network, and connections, and each runs out at a different point. Work out how many machines each resource needs, then buy for the largest. Google's SRE book makes a related point: measure capacity in resources such as CPU cores, not in requests per second, because the cost of a request varies and shifts over time. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a></p></div>
-        <div class="ctl">
-          <label>requests per second <input type="range" min="100" max="5000" step="100" value="1000" data-k="rps"><output data-out="rps">1000</output></label>
-          <label>CPU per request <input type="range" min="1" max="200" step="1" value="50" data-k="cpums"><output data-out="cpums">50 ms</output></label>
-          <label>time in flight <input type="range" min="10" max="3000" step="10" value="200" data-k="lat"><output data-out="lat">200 ms</output></label>
-          <label>memory per request <input type="range" min="1" max="500" step="1" value="50" data-k="mb"><output data-out="mb">50 MB</output></label>
-          <label>response size <input type="range" min="1" max="2000" step="1" value="200" data-k="kb"><output data-out="kb">200 KB</output></label>
-        </div>
-        <div class="ctl">
-          <button type="button" data-preset="cpu">CPU-heavy</button>
-          <button type="button" data-preset="net">download-heavy</button>
-          <button type="button" data-preset="mem">memory-heavy</button>
-        </div>
-        <div class="blk"><h3>What you see</h3>
-          <p>Each bar is the number of machines that one resource needs. The machine is 8 vCPU, 32 GB and 10 Gbps, run at your target utilization. The highest bar decides the fleet size, so the preset buttons move the answer between CPU, network and memory. Memory depends on how long a request stays in flight (requests in flight = rate × time), which is why a slow request is expensive even when it uses little CPU.</p></div>
-      </section>
-
-      <section class="screen" data-n="3" id="sec-3">
-        <h2><span class="rank">3</span>Average, peak, and headroom</h2>
-        <div class="blk"><h3>The method</h3>
-          <p>You pay for the peak, not the average, and you don't run flat out at the peak. Two adjustments: multiply the average by how much higher the peak is, and divide by a target utilization below 100%.</p></div>
-        <div class="ctl">
-          <label>target utilization <input type="range" min="10" max="98" step="1" value="70" data-k="util"><output data-out="util">70%</output></label>
-          <label>peak is this many times the average <input type="range" min="1" max="6" step="0.5" value="2" data-k="peak"><output data-out="peak">2×</output></label>
-        </div>
-        <div class="blk"><h3>Why not 100%</h3>
-          <p>The curve uses the simplest queueing model, one server with random arrivals and random service times. There the average time in the system is the service time divided by (1 − utilization). <a class="src" href="https://en.wikipedia.org/wiki/M/M/1_queue" target="_blank" rel="noopener">source</a> At 50% utilization that is 2 times the service time, at 70% about 3.3 times, at 90% 10 times, and as utilization approaches 100% it grows without limit. Real systems differ from this model, but the shape is the same: delay climbs steeply near full. That is why headroom is worth paying for.</p>
-          <p>The bars below the curve show average, peak, and the capacity you must provision to hold your target utilization at the peak.</p></div>
-      </section>
-
-      <section class="screen" data-n="4" id="sec-4">
-        <h2><span class="rank">4</span>Work divided by the deadline</h2>
-        <div class="blk"><h3>The method</h3>
-          <p>For batch work, nobody needs the answer instantly, so size from the total. Add up the work, divide by the time allowed, and that is the capacity busy on average. The overnight jobs here are 500 jobs of 8 GPUs for 30 minutes, plus 30 monster jobs of 100 GPUs for 3 hours.</p></div>
-        <div class="ctl">
-          <label>finish within <input type="range" min="4" max="96" step="2" value="24" data-k="deadline"><output data-out="deadline">24 h</output></label>
-          <label>target utilization <input type="range" min="10" max="98" step="1" value="70" data-k="util"><output data-out="util">70%</output></label>
-        </div>
-        <div class="blk"><h3>What you see</h3>
-          <p>Total work is 2,000 + 9,000 = 11,000 GPU-hours. Divide by the deadline to get GPUs busy, then by utilization to get GPUs to provision. Finishing by morning needs about ten times what a four-day deadline needs. A longer deadline lowers the cluster size in direct proportion, so the question to ask is how long the work may wait.</p></div>
-      </section>
-
-      <section class="screen" data-n="5" id="sec-5">
-        <h2><span class="rank">5</span>Surviving a failure</h2>
-        <div class="blk"><h3>The method</h3>
-          <p>Capacity you need on a good day is not capacity you need on a bad one. If you spread across Z zones and want to survive losing one, the remaining Z − 1 zones must carry everything, so the total grows by Z ÷ (Z − 1). With 3 zones that is 1.5 times, with 2 zones it is 2 times, with 6 zones 1.2 times.</p></div>
-        <div class="ctl">
-          <label>capacity needed <input type="range" min="10" max="1000" step="10" value="300" data-k="need"><output data-out="need">300</output></label>
-          <label>zones <input type="range" min="2" max="6" step="1" value="3" data-k="zones"><output data-out="zones">3</output></label>
-          <label><input type="checkbox" data-k="insure"> provision to survive losing a zone</label>
-          <label><input type="checkbox" data-k="zoneDown"> a zone is down now</label>
-        </div>
-        <div class="blk"><h3>What you see</h3>
-          <p>Each column is a zone. The outline is the capacity you bought, and the fill is the load. Without the extra capacity, losing a zone pushes the others past 100%, shown in orange. More zones make survival cheaper, but each added zone also adds operating cost and cross-zone traffic.</p>
-          <p>Big jobs add a second problem. A job that needs 100 GPUs at once needs 100 free GPUs, usually on connected machines, so a cluster can have idle GPUs and still be unable to start it. Leave extra room for the largest job.</p></div>
-      </section>
-
-      <section class="screen" data-n="6" id="sec-6">
-        <h2><span class="rank">6</span>Unit traps and checks</h2>
+          <p>Size is the bytes each request carries or stores. It sets network and storage, and the common slips are in the units.</p></div>
         <div class="blk"><h3>Traps</h3>
           <ul>
             <li><b>Bits and bytes.</b> A link quoted in Gbps counts bits, and there are 8 bits in a byte. Gbps to GB/s means dividing by 8.</li>
@@ -230,8 +188,92 @@ a.src{font-size:12px;color:var(--muted)}
           <p>Do the estimate two ways. Rate × time × size gives GPUs busy, and total work ÷ the window should match, as the drawing shows with the screen 1 numbers. When two routes disagree, one has a slip. Then ask whether the answer is plausible, and treat anything within a factor of 2 as a good estimate. When the number matters, replace assumptions with a load test.</p></div>
       </section>
 
-      <section class="screen" data-n="7" id="sec-7">
-        <h2><span class="rank">7</span>The case: size a job cluster</h2>
+<section class="screen" data-n="8" id="sec-8">
+        <div class="grp">Input: retention</div>
+        <h2><span class="rank">3</span>Retention: storage grows until data expires</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>Every request that writes data adds to storage, and storage stops growing only when old data is deleted. Space needed = rate &times; size &times; retention, so doubling the retention doubles the disks. Load grows too, so also size for next year's rate.</p></div>
+        <div class="ctl">
+          <label>requests per second <input type="range" min="100" max="5000" step="100" value="1000" data-k="rps"><output data-out="rps">1000</output></label>
+          <label>stored per request <input type="range" min="1" max="500" step="1" value="2" data-k="stkb"><output data-out="stkb">2 KB</output></label>
+          <label>retention <input type="range" min="1" max="365" step="1" value="30" data-k="days"><output data-out="days">30 days</output></label>
+          <label>growth per year <input type="range" min="0" max="300" step="10" value="50" data-k="growth"><output data-out="growth">50%</output></label>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>The solid line is the data kept today. It climbs until the retention window is full, then flattens, because new data replaces what expires. The dashed line adds a year of growth in the rate. The readouts turn each into disks, at the same 4 TB machines and utilization target as the resource screen.</p></div>
+      </section>
+
+<section class="screen" data-n="2" id="sec-2">
+        <div class="grp">Resources</div>
+        <h2><span class="rank">4</span>Which resource runs out first</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>A request uses compute, memory, storage, network, and connections, and each runs out at a different point. Work out how many machines each resource needs, then buy for the largest. Google's SRE book makes a related point: measure capacity in resources such as CPU cores, not in requests per second, because the cost of a request varies and shifts over time. <a class="src" href="https://sre.google/sre-book/handling-overload/" target="_blank" rel="noopener">source</a></p></div>
+        <div class="ctl">
+          <label>requests per second <input type="range" min="100" max="5000" step="100" value="1000" data-k="rps"><output data-out="rps">1000</output></label>
+          <label>CPU time per request <input type="range" min="1" max="200" step="1" value="50" data-k="cpums"><output data-out="cpums">50 ms</output></label>
+          <label>latency <input type="range" min="10" max="3000" step="10" value="200" data-k="lat"><output data-out="lat">200 ms</output></label>
+          <label>memory per request <input type="range" min="1" max="500" step="1" value="50" data-k="mb"><output data-out="mb">50 MB</output></label>
+          <label>response size <input type="range" min="1" max="2000" step="1" value="200" data-k="kb"><output data-out="kb">200 KB</output></label>
+          <label>stored per request <input type="range" min="1" max="500" step="1" value="2" data-k="stkb"><output data-out="stkb">2 KB</output></label>
+          <label>retention <input type="range" min="1" max="365" step="1" value="30" data-k="days"><output data-out="days">30 days</output></label>
+        </div>
+        <div class="ctl">
+          <button type="button" data-preset="cpu">CPU-heavy</button>
+          <button type="button" data-preset="net">download-heavy</button>
+          <button type="button" data-preset="mem">memory-heavy</button>
+          <button type="button" data-preset="sto">storage-heavy</button>
+          <button type="button" data-preset="con">long-lived connections</button>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Each bar is the number of machines that one resource needs. The machine is 8 vCPU, 32 GB, 10 Gbps, a 4 TB disk and 5,000 connections, run at your target utilization. The highest bar decides the fleet size, and the preset buttons move the answer between the five. Memory and connections depend on the latency (requests in flight = rate &times; latency), which is why a slow request is expensive even when it uses little CPU.</p></div>
+      </section>
+
+<section class="screen" data-n="3" id="sec-3">
+        <div class="grp">Target: latency goal</div>
+        <h2><span class="rank">5</span>Latency goal: why not run at 100%</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>You pay for the peak, not the average, and you don't run flat out at the peak. Two adjustments: multiply the average by how much higher the peak is, and divide by a target utilization below 100%.</p></div>
+        <div class="ctl">
+          <label>target utilization <input type="range" min="10" max="98" step="1" value="70" data-k="util"><output data-out="util">70%</output></label>
+          <label>peak is this many times the average <input type="range" min="1" max="6" step="0.5" value="2" data-k="peak"><output data-out="peak">2×</output></label>
+        </div>
+        <div class="blk"><h3>Why not 100%</h3>
+          <p>The curve uses the simplest queueing model, one server with random arrivals and random service times. There the average time in the system is the service time divided by (1 − utilization). <a class="src" href="https://en.wikipedia.org/wiki/M/M/1_queue" target="_blank" rel="noopener">source</a> At 50% utilization that is 2 times the service time, at 70% about 3.3 times, at 90% 10 times, and as utilization approaches 100% it grows without limit. Real systems differ from this model, but the shape is the same: delay climbs steeply near full. That is why headroom is worth paying for.</p>
+          <p>The bars below the curve show average, peak, and the capacity you must provision to hold your target utilization at the peak.</p></div>
+      </section>
+
+<section class="screen" data-n="5" id="sec-5">
+        <div class="grp">Target: availability</div>
+        <h2><span class="rank">6</span>Availability: surviving a lost zone</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>Capacity you need on a good day is not capacity you need on a bad one. If you spread across Z zones and want to survive losing one, the remaining Z − 1 zones must carry everything, so the total grows by Z ÷ (Z − 1). With 3 zones that is 1.5 times, with 2 zones it is 2 times, with 6 zones 1.2 times.</p></div>
+        <div class="ctl">
+          <label>capacity needed <input type="range" min="10" max="1000" step="10" value="300" data-k="need"><output data-out="need">300</output></label>
+          <label>zones <input type="range" min="2" max="6" step="1" value="3" data-k="zones"><output data-out="zones">3</output></label>
+          <label><input type="checkbox" data-k="insure"> provision to survive losing a zone</label>
+          <label><input type="checkbox" data-k="zoneDown"> a zone is down now</label>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Each column is a zone. The outline is the capacity you bought, and the fill is the load. Without the extra capacity, losing a zone pushes the others past 100%, shown in orange. More zones make survival cheaper, but each added zone also adds operating cost and cross-zone traffic.</p>
+          <p>Big jobs add a second problem. A job that needs 100 GPUs at once needs 100 free GPUs, usually on connected machines, so a cluster can have idle GPUs and still be unable to start it. Leave extra room for the largest job.</p></div>
+      </section>
+
+<section class="screen" data-n="4" id="sec-4">
+        <div class="grp">Case: batch work</div>
+        <h2><span class="rank">7</span>Batch work: size from the deadline</h2>
+        <div class="blk"><h3>The method</h3>
+          <p>For batch work, nobody needs the answer instantly, so size from the total. Add up the work, divide by the time allowed, and that is the capacity busy on average. The overnight jobs here are 500 jobs of 8 GPUs for 30 minutes, plus 30 monster jobs of 100 GPUs for 3 hours.</p></div>
+        <div class="ctl">
+          <label>finish within <input type="range" min="4" max="96" step="2" value="24" data-k="deadline"><output data-out="deadline">24 h</output></label>
+          <label>target utilization <input type="range" min="10" max="98" step="1" value="70" data-k="util"><output data-out="util">70%</output></label>
+        </div>
+        <div class="blk"><h3>What you see</h3>
+          <p>Total work is 2,000 + 9,000 = 11,000 GPU-hours. Divide by the deadline to get GPUs busy, then by utilization to get GPUs to provision. Finishing by morning needs about ten times what a four-day deadline needs. A longer deadline lowers the cluster size in direct proportion, so the question to ask is how long the work may wait.</p></div>
+      </section>
+
+<section class="screen" data-n="7" id="sec-7">
+        <div class="grp">Case</div>
+        <h2><span class="rank">8</span>The job cluster</h2>
         <div class="blk"><h3>The requirements</h3>
           <ul>
             <li><b>Daytime:</b> 300 jobs over 12 hours, each 15 to 30 minutes, each using 1 to 4 GPUs.</li>
@@ -248,7 +290,7 @@ a.src{font-size:12px;color:var(--muted)}
           <p><b>Daytime.</b> 300 jobs over 12 hours is 25 jobs per hour. At 15 to 30 minutes that is 6 to 12.5 jobs in flight, and at 1 to 4 GPUs each, between 6 and 50 GPUs busy, about 23 with middle values. Daytime work totals only about 281 GPU-hours.</p>
           <p><b>Overnight.</b> 500 × 8 × 0.5 = 2,000 GPU-hours of regular jobs, and 30 × 100 × 3 = 9,000 GPU-hours of monsters. The monsters are over 80% of the work. Divide by the deadline: finishing in 12 hours takes about 917 GPUs busy, and in 24 hours about 458. Divide by the utilization target for what to buy, and multiply by the zone factor if you must survive a zone loss.</p>
           <p><b>What to decide.</b> The monsters decide everything, so the useful questions are whether they have a deadline or can take days, whether they can be spread across nights, and whether a 100-GPU, 3-hour job can run on 50 GPUs for 6 hours. If the work scales that way, the GPU-hours stay the same but the peak need halves. Whatever you buy, a 100-GPU job needs 100 GPUs free together.</p></div>
-        <p class="note">The job sizes and counts are example numbers. The utilization curve is the simple one-server queueing model, so it overstates or understates real systems. The machine in the screen 2 calculator (8 vCPU, 32 GB, 10 Gbps) and the memory and CPU per request are illustrative.</p>
+        <p class="note">The job sizes and counts are example numbers. The utilization curve is the simple one-server queueing model, so it overstates or understates real systems. The machine in the screen 4 calculator (8 vCPU, 32 GB, 10 Gbps, 4 TB, 5,000 connections) and the memory and CPU per request are illustrative.</p>
       </section>
 
     </div>
@@ -293,10 +335,74 @@ a.src{font-size:12px;color:var(--muted)}
 
     var S = { n1: 300, win: 12, min1: 22, g1: 2.5, rps: 1000, cpums: 50, lat: 200, mb: 50, kb: 200,
               util: 70, peak: 2, deadline: 24, need: 300, zones: 3, insure: false, zoneDown: false,
-              link: 10, tb: 500, nMon: 30, gMon: 100 };
+              link: 10, tb: 500, nMon: 30, gMon: 100, stkb: 2, days: 30, growth: 50 };
+    var ORDER = [1, 6, 8, 2, 3, 5, 4, 7];
     var current = 1;
     var NREG = 500, GREG = 8, HREG = 0.5, HMON = 3;
     function overnightHours() { return NREG * GREG * HREG + S.nMon * S.gMon * HMON; }
+
+    function drawIntro() {
+      var g = $("intro-svg");
+      function box(x, y, w, h, c, name, d1, d2) {
+        el("rect", { "class": "ent", x: x, y: y, width: w, height: h, rx: 4, style: "--c: var(--" + c + ")" }, g);
+        bold(g, x + 12, y + 20, name);
+        label(g, x + 12, y + 38, d1);
+        if (d2) label(g, x + 12, y + 54, d2);
+      }
+      [[8, 244], [288, 424], [748, 244]].forEach(function (p) {
+        el("rect", { x: p[0], y: 6, width: p[1], height: 392, rx: 8, style: "fill: var(--track); stroke: var(--rule)", opacity: 0.5 }, g);
+      });
+      function head(x, t) { el("text", { "class": "tb", x: x, y: 30, style: "font-size: 16px; font-weight: 800" }, g, t); }
+      head(20, "INPUTS");
+      box(20, 44, 220, 54, "ocean", "rate", "requests per second");
+      box(20, 110, 220, 54, "ocean", "size", "bytes per request");
+      box(20, 176, 220, 120, "ocean", "latency", "seconds from start to finish");
+      [["CPU time: on a core", 70, "cpu"], ["waiting: on other services", 110, "ram"], ["queueing: for a worker", 40, "hop"]].forEach(function (p, i, arr) {
+        var x = 32 + arr.slice(0, i).reduce(function (a, q) { return a + q[1]; }, 0) * 196 / 220;
+        el("rect", { x: x, y: 230, width: p[1] * 196 / 220 - 2, height: 12, fill: "var(--" + p[2] + ")" }, g);
+        el("rect", { x: 32, y: 252 + i * 14 - 8, width: 8, height: 8, fill: "var(--" + p[2] + ")" }, g);
+        label(g, 46, 252 + i * 14, p[0]);
+      });
+      box(20, 308, 220, 54, "ocean", "retention", "how long data is kept");
+      head(300, "RESOURCES");
+      var rows = [
+        ["compute", "CPU or GPU cores", "rate x CPU time", 0.62],
+        ["memory", "RAM, including per request in flight", "rate x latency x memory each", 0.36],
+        ["storage", "capacity, plus read/write speed (IOPS)", "rate x size x retention", 0.46],
+        ["network", "bandwidth, and bytes versus bits", "rate x size x 8 bits", 0.28],
+        ["connections", "sockets, file descriptors, pools: often missed", "rate x latency", 0.2]
+      ];
+      rows.forEach(function (r, i) {
+        var y = 44 + i * 62;
+        bold(g, 300, y + 12, r[0]);
+        label(g, 400, y + 12, r[1]);
+        hbar(g, 300, y + 22, 400, 12, r[3], i === 0 ? "sel" : "");
+        label(g, 300, y + 50, r[2]);
+      });
+      label(g, 300, 372, "the longest bar decides the size (bars illustrative)");
+      head(760, "TARGETS");
+      box(760, 44, 220, 62, "ssd", "latency goal", "response-time goal:", "stay under ~70% busy");
+      box(760, 122, 220, 62, "ram", "growth", "next 1-2 years;", "storage accumulates");
+      box(760, 200, 220, 62, "hop", "availability", "replicas and zones:", "survive a lost zone");
+      box(760, 278, 220, 62, "muted", "cost", "the price of every", "margin you add");
+      [[256, 200], [716, 200]].forEach(function (p) {
+        el("path", { "class": "ln", d: "M" + p[0] + " " + p[1] + "H" + (p[0] + 28), "marker-end": "url(#ah2)" }, g);
+      });
+      function hit(x, y, w, h, href, name) {
+        var a = el("a", { href: href, "aria-label": "Go to " + name }, g);
+        el("rect", { "class": "hit", x: x, y: y, width: w, height: h, rx: 4 }, a);
+      }
+      hit(20, 44, 220, 54, "#sec-1", "rate");
+      hit(20, 110, 220, 54, "#sec-6", "size");
+      hit(20, 176, 220, 120, "#sec-1", "latency");
+      hit(20, 308, 220, 54, "#sec-8", "retention");
+      rows.forEach(function (r, i) { hit(296, 42 + i * 62, 412, 58, "#sec-2", r[0]); });
+      hit(760, 44, 220, 62, "#sec-3", "latency goal");
+      hit(760, 122, 220, 62, "#sec-8", "growth");
+      hit(760, 200, 220, 62, "#sec-5", "availability");
+      hit(760, 278, 220, 62, "#sec-7", "cost");
+      bold(g, 20, 426, "size each resource, take the biggest, then add margin for the targets");
+    }
 
     // screen 1: jobs over time and the count in flight
     function drawS1() {
@@ -326,7 +432,7 @@ a.src{font-size:12px;color:var(--muted)}
       label(g, X0, Y0 + H + 16, "0 h"); label(g, X0 + W, Y0 + H + 16, "3 h", "end");
       var rows = [
         ["arrival rate", num(rate) + " jobs per hour", "= " + S.n1 + " jobs / " + S.win + " h"],
-        ["time per job", num(d) + " hours", "= " + S.min1 + " min / 60"],
+        ["latency per job", num(d) + " hours", "= " + S.min1 + " min / 60"],
         ["jobs in flight", num(L), "= " + num(rate) + " x " + num(d)],
         ["GPUs busy on average", num(gpus), "= " + num(L) + " x " + S.g1 + " GPUs"]
       ];
@@ -346,27 +452,64 @@ a.src{font-size:12px;color:var(--muted)}
     function drawS2() {
       var g = $("s2"), u = S.util / 100;
       clear(g);
-      var conc = S.rps * S.lat / 1000, cpuBusy = S.rps * S.cpums / 1000;
+      var conc = S.rps * S.lat / 1000, cpuBusy = S.rps * S.cpums / 1000, tb = S.rps * S.stkb * 86400 * S.days / 1e9;
       var res = [
-        ["CPU", cpuBusy / (8 * u), cpuBusy.toFixed(0) + " vCPU busy"],
+        ["compute", cpuBusy / (8 * u), cpuBusy.toFixed(0) + " vCPU busy"],
         ["memory", conc * S.mb / 1024 / (32 * u), (conc * S.mb / 1024).toFixed(1) + " GB held by " + Math.round(conc) + " in flight"],
-        ["network", S.rps * S.kb * 8 / 1e6 / (10 * u), (S.rps * S.kb * 8 / 1e6).toFixed(2) + " Gbps out"]
+        ["storage", tb / (4 * u), num(tb) + " TB kept for " + S.days + " days"],
+        ["network", S.rps * S.kb * 8 / 1e6 / (10 * u), (S.rps * S.kb * 8 / 1e6).toFixed(2) + " Gbps out"],
+        ["connections", conc / (5000 * u), Math.round(conc) + " open at once"]
       ];
       var mx = Math.max.apply(null, res.map(function (r) { return r[1]; })), winner = res.reduce(function (a, b) { return b[1] > a[1] ? b : a; });
       bold(g, 20, 34, "machines needed, by resource");
-      label(g, 20, 52, "one machine: 8 vCPU, 32 GB, 10 Gbps, at " + S.util + "% utilization");
+      label(g, 20, 52, "one machine: 8 vCPU, 32 GB, 10 Gbps, 4 TB, 5,000 connections");
       res.forEach(function (r, i) {
-        var y = 90 + i * 100;
-        bold(g, 20, y, r[0]);
-        label(g, 20, y + 16, r[2]);
-        hbar(g, 20, y + 28, 400, 20, mx ? r[1] / mx : 0, r === winner ? "sel" : "");
-        bold(g, 430, y + 44, num(Math.ceil(r[1] * 10) / 10), "start");
-        if (r === winner) label(g, 20, y + 68, "this resource sets the fleet size");
+        var y = 80 + i * 62;
+        bold(g, 20, y, r[0] + (r === winner ? "  <- sets the fleet size" : ""));
+        label(g, 20, y + 15, r[2]);
+        hbar(g, 20, y + 24, 400, 16, mx ? r[1] / mx : 0, r === winner ? "sel" : "");
+        bold(g, 430, y + 37, num(Math.ceil(r[1] * 10) / 10), "start");
       });
-      bold(g, 20, 420, "fleet: " + Math.max(1, Math.ceil(mx)) + " machines");
-      label(g, 20, 442, "requests in flight = rate x time in flight = " + num(conc));
-      label(g, 20, 458, "CPU busy = rate x CPU per request = " + num(cpuBusy) + " vCPU");
-      label(g, 20, 490, "Take the highest bar, round up, and add machines for failures.");
+      bold(g, 20, 416, "fleet: " + Math.max(1, Math.ceil(mx)) + " machines at " + S.util + "% utilization");
+      label(g, 20, 440, "requests in flight = rate x latency = " + num(conc));
+      label(g, 20, 456, "compute busy = rate x CPU time = " + num(cpuBusy) + " vCPU");
+      label(g, 20, 472, "kept = rate x stored x retention = " + num(tb) + " TB");
+      label(g, 20, 504, "Take the highest bar, round up, and add machines for failures.");
+    }
+
+    // screen 8: retention and storage growth
+    function drawS8() {
+      var g = $("s8"), u = S.util / 100, daily = S.rps * S.stkb * 86400 / 1e6, gr = S.growth / 100, ret = S.days;
+      clear(g);
+      function stored(t, grow) { return daily * (grow ? 1 + gr * t / 365 : 1) * Math.min(t, ret) / 1000; }
+      var top = Math.max(stored(365, true), stored(365, false), 0.001), X0 = 50, W = 450, Y0 = 60, H = 190;
+      bold(g, 20, 34, "data kept over one year (TB)");
+      el("rect", { x: X0, y: Y0, width: W, height: H, "class": "thin" }, g);
+      [false, true].forEach(function (grow) {
+        var d = "";
+        for (var t = 0; t <= 365; t += 5) d += (t ? "L" : "M") + (X0 + t / 365 * W).toFixed(1) + " " + (Y0 + H - stored(t, grow) / top * H).toFixed(1);
+        el("path", { "class": "ln" + (grow ? " dash" : ""), d: d, style: "stroke: var(--" + (grow ? "hl" : "hop") + "); stroke-width: 2; fill: none" }, g);
+      });
+      var rx = X0 + ret / 365 * W;
+      el("path", { "class": "thin", d: "M" + rx + " " + Y0 + "V" + (Y0 + H) }, g);
+      label(g, X0, Y0 + H + 16, "0"); label(g, X0 + W, Y0 + H + 16, "1 year", "end");
+      label(g, clamp(rx, X0 + 30, X0 + W - 40), Y0 + H + 32, "retention: " + ret + " d", "middle");
+      label(g, X0 - 4, Y0 + 10, num(top), "end"); label(g, X0 - 4, Y0 + H, "0", "end");
+      var steady = stored(365, false), later = stored(365, true);
+      var rows = [
+        ["written per day", num(daily) + " GB", "= rate x stored x 86,400 s"],
+        ["kept at steady state", num(steady) + " TB", "= per day x retention"],
+        ["kept in a year, +" + S.growth + "% rate", num(later) + " TB", "= steady state x " + num(1 + gr)],
+        ["4 TB disks to buy", Math.ceil(later / (4 * u)).toString(), "= kept / (4 TB x " + u.toFixed(2) + ")"]
+      ];
+      rows.forEach(function (r, i) {
+        var y = 318 + i * 44;
+        label(g, 30, y, r[0]);
+        bold(g, 260, y, r[1]);
+        label(g, 260, y + 15, r[2]);
+      });
+      label(g, 30, 520, "solid: today's rate. dashed: with a year of growth.");
+      label(g, 30, 538, "Storage fills until the retention window is full, then holds.");
     }
 
     // screen 3: utilization against delay, and peak provisioning
@@ -514,8 +657,8 @@ a.src{font-size:12px;color:var(--muted)}
     }
 
     function render() {
-      ({ 1: drawS1, 2: drawS2, 3: drawS3, 4: drawS4, 5: drawS5, 6: drawS6, 7: drawS7 })[current]();
-      var units = { win: " h", min1: " min", cpums: " ms", lat: " ms", mb: " MB", kb: " KB", util: "%", peak: "×", deadline: " h", link: " Gbps", tb: " TB" };
+      ({ 1: drawS1, 2: drawS2, 3: drawS3, 4: drawS4, 5: drawS5, 6: drawS6, 7: drawS7, 8: drawS8 })[current]();
+      var units = { win: " h", min1: " min", cpums: " ms", lat: " ms", mb: " MB", kb: " KB", stkb: " KB", days: " days", growth: "%", util: "%", peak: "×", deadline: " h", link: " Gbps", tb: " TB" };
       document.querySelectorAll("[data-out]").forEach(function (o) {
         var k = o.getAttribute("data-out");
         o.textContent = S[k] + (units[k] || "");
@@ -526,7 +669,7 @@ a.src{font-size:12px;color:var(--muted)}
     function show(n) {
       current = Number(n);
       groups.forEach(function (g) { g.classList.toggle("show", g.getAttribute("data-s") === String(n)); });
-      $("prog").textContent = "screen " + n + " of 7";
+      $("prog").textContent = "screen " + (ORDER.indexOf(Number(n)) + 1) + " of 8";
       render();
     }
     document.querySelectorAll("[data-k]").forEach(function (inp) {
@@ -540,9 +683,11 @@ a.src{font-size:12px;color:var(--muted)}
       });
     });
     var PRESETS = {
-      cpu: { rps: 1000, cpums: 50, lat: 200, mb: 50, kb: 20 },
-      net: { rps: 5000, cpums: 5, lat: 100, mb: 5, kb: 1000 },
-      mem: { rps: 1000, cpums: 5, lat: 1000, mb: 100, kb: 20 }
+      cpu: { rps: 1000, cpums: 50, lat: 200, mb: 50, kb: 20, stkb: 2, days: 30 },
+      net: { rps: 5000, cpums: 5, lat: 100, mb: 5, kb: 1000, stkb: 2, days: 30 },
+      mem: { rps: 1000, cpums: 5, lat: 1000, mb: 100, kb: 20, stkb: 2, days: 30 },
+      sto: { rps: 1000, cpums: 5, lat: 100, mb: 5, kb: 20, stkb: 100, days: 90 },
+      con: { rps: 5000, cpums: 2, lat: 3000, mb: 1, kb: 5, stkb: 1, days: 7 }
     };
     document.querySelectorAll("[data-preset]").forEach(function (b) {
       b.addEventListener("click", function () {
@@ -554,6 +699,7 @@ a.src{font-size:12px;color:var(--muted)}
         render();
       });
     });
+    drawIntro();
     show(1);
     if (!("IntersectionObserver" in window)) return;
     var io = new IntersectionObserver(function (entries) {
